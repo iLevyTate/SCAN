@@ -1,10 +1,13 @@
 # SCAN Project
 
-This project leverages CrewAI for orchestrating role-playing, autonomous AI agents to perform complex task management and execution.
+This project aims to develop a sophisticated multi-agent system that replicates the functions of the prefrontal cortex (PFC) using AI agents.
 
 ## Setup
 
-1. Clone the repository.
-2. Install the required packages:
+### Clone the Repository
+
+1. Clone the repository to your local machine:
+
    ```sh
-   pip install -r requirements.txt
+   git clone https://github.com/your_username/your_repository_name.git
+   cd your_repository_name/SCAN

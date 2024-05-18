@@ -1,17 +1,12 @@
 # SCAN Project
 
-[![Tests Status](https://github.com/iLevyTate/SCAN/workflows/Testing/badge.svg?branch=main&event=push)](https://github.com/iLevyTate/SCAN/actions?query=workflow%3ATesting+branch%3Amain+event%3Apush)
-[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/iLevyTate/SCAN/main.svg)](https://results.pre-commit.ci/latest/github/iLevyTate/SCAN/main)
-
-![SCAN Project Profile Picture - 1280 x 640](https://via.placeholder.com/1280x640)
-
 | Link                                      | Description |
 | :---------------------------------------- | :---------- |
 | [SCAN repo](https://github.com/iLevyTate/SCAN) | Codebase    |
 
 ---
 
-The SCAN project aims to develop a sophisticated multi-agent system that replicates the functions of the prefrontal cortex (PFC) using AI agents.
+The SCAN (Synthetic Cognitive Augmentation Network) project aims to develop a collaborative multi-agent system that replicates the functions of the prefrontal cortex (PFC) using AI agents to enhance problem solving, planning, decision making, and other PFC-related activities.
 
 ---
 
@@ -19,31 +14,57 @@ The SCAN project aims to develop a sophisticated multi-agent system that replica
 
 - Simulates complex cognitive functions of the PFC
 - Utilizes multiple specialized AI agents for different cognitive tasks
-- Integrates generative AI for decision making and analysis
-- Tracks task progress and updates details dynamically
-- Provides detailed reports on cognitive task simulations
 
 ---
 
 ## Tech Stack
 
-- CrewAI: Framework for orchestrating role-playing, autonomous AI agents
-- LangChain: Framework for building language model applications
-- Python: Core programming language
-- OpenAI GPT API: Generative AI for advanced decision making
-- dotenv: For managing environment variables
+- **CrewAI**: Framework for orchestrating role-playing, autonomous AI agents
+- **LangChain**: Framework for building language model applications
+- **LLM Integrations**:
+  - OpenAI GPT API
+  - Google Generative AI
+  - Ollama API
 
 ---
 
-## Solution
+## Configuration
 
-Professionals and researchers in neuroscience and AI often struggle with simulating complex cognitive functions of the brain. The SCAN project provides a robust multi-agent system that can simulate the functions of the prefrontal cortex (PFC), enabling detailed analysis and decision-making simulations. This system can help in understanding cognitive processes and developing advanced AI applications that mimic human cognitive functions.
+To configure the project, create a `.env` file in the root directory with the following variables:
+
+```env
+# .env file
+
+# OpenAI API Key
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Google API Key (for Google Generative AI)
+GOOGLE_API_KEY=your_google_api_key_here
+
+# Ollama API Key
+OLLAMA_API_KEY=your_ollama_api_key_here
+```
 
 ---
 
-## Installation
+## Usage
 
-Clone the repository:
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/iLevyTate/SCAN.git
+   cd SCAN
+   ```
 
-```sh
-git clone https://github.com/iLevyTate/SCAN.git
+2. **Install the required packages**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Set up your environment variables** in the `.env` file as shown above.
+
+4. **Run the main script**:
+   ```bash
+   python main.py
+   ```
+
+---

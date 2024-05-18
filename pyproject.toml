@@ -1,15 +1,19 @@
 [tool.poetry]
 name = "scan"
 version = "0.1.0"
-description = "A project using CrewAI for orchestrating role-playing, autonomous AI agents."
+description = "This project aims to develop a sophisticated multi-agent system that replicates the functions of the prefrontal cortex (PFC) using AI agents."
 authors = ["John Doe <john.doe@example.com>"]
+license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.8"
 crewai = "^0.1.0"
 duckduckgo-search = "^0.1.0"
-langchain-google-genai = "^0.1.0"
+langchain_google_genai = "^0.1.0"
 python-dotenv = "^0.19.2"
+black = "23.10.1"
+ruff = "0.1.4"
+prettier = "2.8.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

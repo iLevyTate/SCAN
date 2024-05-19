@@ -2,26 +2,35 @@
 
 import os
 from crewai import Crew, Process
-from scan_agents import PFCAgents
-from scan_tasks import PFCTasks
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
+
+from scan.errors import MissingEnvironmentVairableError
+from scan.scan_agents import PFCAgents
+from scan.scan_tasks import PFCTasks
 
 # Load environment variables from .env file
 load_dotenv()
 
-# Set up the language model
-llm = ChatGoogleGenerativeAI(
-    model="gemini-pro",
-    verbose=True,
-    temperature=0.6,
-    google_api_key=os.getenv("GOOGLE_API_KEY")
-)
 
 class CustomCrew:
     def __init__(self, topic):
+        self.google_api_key = os.getenv("GOOGLE_API_KEY")
+        if not self.google_api_key:
+            raise MissingEnvironmentVairableError(
+                "The GOOGLE_API_KEY environment vairable must be set"
+            )
+
+        # Set up the language model
+        self.llm = ChatGoogleGenerativeAI(
+            model="gemini-pro",
+            verbose=True,
+            temperature=0.6,
+            google_api_key=os.getenv("GOOGLE_API_KEY"),
+        )
+
         self.topic = topic
-        self.agents = PFCAgents(llm)
+        self.agents = PFCAgents(self.llm)
         self.tasks = PFCTasks(self.agents)
 
     def run(self):
@@ -33,21 +42,29 @@ class CustomCrew:
 
         crew = Crew(
             agents=[
-                self.agents.dlpfc_agent(), self.agents.vmpfc_agent(), 
-                self.agents.ofc_agent(), self.agents.acc_agent(), self.agents.mpfc_agent()
+                self.agents.dlpfc_agent(),
+                self.agents.vmpfc_agent(),
+                self.agents.ofc_agent(),
+                self.agents.acc_agent(),
+                self.agents.mpfc_agent(),
             ],
             tasks=[
-                decision_task, emotional_task, reward_task, conflict_task, social_task
+                decision_task,
+                emotional_task,
+                reward_task,
+                conflict_task,
+                social_task,
             ],
-            manager_llm=llm,  # Use the previously defined Google AI LLM as the manager
+            manager_llm=self.llm,  # Use the previously defined Google AI LLM as the manager
             process=Process.hierarchical,  # Specifies the hierarchical management approach
-            memory=True  # Enable memory usage for enhanced task execution
+            memory=True,  # Enable memory usage for enhanced task execution
         )
 
         result = crew.kickoff()
         return result
 
-if __name__ == "__main__":
+
+def main() -> int:
     print("## Welcome to the SCAN")
     print("---------------------------------------------------------------")
     continue_analysis = True
@@ -61,5 +78,11 @@ if __name__ == "__main__":
         print("########################\n")
         print(result)
         response = input("Do you want to analyze another topic? (yes/no): ")
-        if response.lower() != 'yes':
+        if response.lower() != "yes":
             continue_analysis = False
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

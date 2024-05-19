@@ -2,7 +2,8 @@
 
 from crewai import Agent
 from textwrap import dedent
-from tools.search_tools import SearchTools
+from scan.tools.search_tools import SearchTools
+
 
 class PFCAgents:
     def __init__(self, llm):
@@ -10,7 +11,7 @@ class PFCAgents:
 
     def dlpfc_agent(self):
         return Agent(
-            role='Executive Function Manager',
+            role="Executive Function Manager",
             backstory=dedent("""
                 Responsible for managing executive functions such as planning and inhibition, essential in complex cognitive tasks.
             """),
@@ -24,12 +25,12 @@ class PFCAgents:
             tools=[
                 SearchTools.search_internet,
                 SearchTools.search_news,
-            ]
+            ],
         )
 
     def vmpfc_agent(self):
         return Agent(
-            role='Emotional and Risk Processor',
+            role="Emotional and Risk Processor",
             backstory=dedent("""
                 Engages in decision-making that involves emotional outcomes and risk assessment.
             """),
@@ -43,12 +44,12 @@ class PFCAgents:
             tools=[
                 SearchTools.search_internet,
                 SearchTools.search_news,
-            ]
+            ],
         )
 
     def ofc_agent(self):
         return Agent(
-            role='Impulse Control and Reward Evaluation Manager',
+            role="Impulse Control and Reward Evaluation Manager",
             backstory=dedent("""
                 Focuses on the assessment of rewards and punishments to guide behavior modifications.
             """),
@@ -62,12 +63,12 @@ class PFCAgents:
             tools=[
                 SearchTools.search_internet,
                 SearchTools.search_news,
-            ]
+            ],
         )
 
     def acc_agent(self):
         return Agent(
-            role='Performance Monitor and Conflict Resolver',
+            role="Performance Monitor and Conflict Resolver",
             backstory=dedent("""
                 Acts as a moderator and overseer, ensuring optimal task performance and conflict resolution.
             """),
@@ -81,12 +82,12 @@ class PFCAgents:
             tools=[
                 SearchTools.search_internet,
                 SearchTools.search_news,
-            ]
+            ],
         )
 
     def mpfc_agent(self):
         return Agent(
-            role='Social Cognition and Self-Reflection Facilitator',
+            role="Social Cognition and Self-Reflection Facilitator",
             backstory=dedent("""
                 Engages in understanding social dynamics and internal self-reflection.
             """),
@@ -100,5 +101,5 @@ class PFCAgents:
             tools=[
                 SearchTools.search_internet,
                 SearchTools.search_news,
-            ]
+            ],
         )

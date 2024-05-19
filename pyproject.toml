@@ -6,15 +6,41 @@ authors = ["John Doe <john.doe@example.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.8"
-crewai = "^0.1.0"
-duckduckgo-search = "^0.1.0"
-langchain_google_genai = "^0.1.0"
-python-dotenv = "^0.19.2"
-black = "23.10.1"
-ruff = "0.1.4"
-prettier = "2.8.0"
+python = ">=3.10, <=3.13"  # The way crewai set its python requirement made this necessary
+crewai = "^0.30.11"
+duckduckgo-search = "^6.1.0"
+langchain_google_genai = "^1.0.4"
+python-dotenv = "^1.0.1"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "0.4.4"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+fix = true
+
+[tool.ruff.lint]
+select=["E", "B", "F", "UP", "I001", "T201", "T203"]
+ignore=[
+  # Recommened ignores by ruff when using formatter
+  "E501",
+  "W191",
+  "E111",
+  "E114",
+  "E117",
+  "D206",
+  "D300",
+  "Q000",
+  "Q001",
+  "Q002",
+  "Q003",
+  "COM812",
+  "COM819",
+  "ISC001",
+  "ISC002",
+]

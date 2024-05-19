@@ -1,0 +1,2 @@
+class MissingEnvironmentVairableError(Exception):
+    pass

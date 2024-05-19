@@ -15,8 +15,9 @@ llm = ChatGoogleGenerativeAI(
     model="gemini-pro",
     verbose=True,
     temperature=0.6,
-    google_api_key=os.getenv("GOOGLE_API_KEY")
+    google_api_key=os.getenv("GOOGLE_API_KEY"),
 )
+
 
 class CustomCrew:
     def __init__(self, topic):
@@ -33,19 +34,27 @@ class CustomCrew:
 
         crew = Crew(
             agents=[
-                self.agents.dlpfc_agent(), self.agents.vmpfc_agent(), 
-                self.agents.ofc_agent(), self.agents.acc_agent(), self.agents.mpfc_agent()
+                self.agents.dlpfc_agent(),
+                self.agents.vmpfc_agent(),
+                self.agents.ofc_agent(),
+                self.agents.acc_agent(),
+                self.agents.mpfc_agent(),
             ],
             tasks=[
-                decision_task, emotional_task, reward_task, conflict_task, social_task
+                decision_task,
+                emotional_task,
+                reward_task,
+                conflict_task,
+                social_task,
             ],
             manager_llm=llm,  # Use the previously defined Google AI LLM as the manager
             process=Process.hierarchical,  # Specifies the hierarchical management approach
-            memory=True  # Enable memory usage for enhanced task execution
+            memory=True,  # Enable memory usage for enhanced task execution
         )
 
         result = crew.kickoff()
         return result
+
 
 if __name__ == "__main__":
     print("## Welcome to the SCAN")
@@ -61,5 +70,5 @@ if __name__ == "__main__":
         print("########################\n")
         print(result)
         response = input("Do you want to analyze another topic? (yes/no): ")
-        if response.lower() != 'yes':
+        if response.lower() != "yes":
             continue_analysis = False

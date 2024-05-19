@@ -26,7 +26,7 @@ class PFCTasks:
 
     def emotional_risk_assessment_task(self, topic):
         description = dedent(
-            """
+            f"""
             Task: Evaluate decisions involving high emotional impact related to '{topic}'.
             Actions Required:
             - Identify the emotional and psychological factors at play in decisions about '{topic}'.
@@ -44,7 +44,7 @@ class PFCTasks:
 
     def reward_evaluation_task(self, topic):
         description = dedent(
-            """
+            f"""
             Task: Assess different actions or options based on potential rewards related to '{topic}'.
             Actions Required:
             - Evaluate the potential rewards associated with each option concerning '{topic}'.
@@ -62,7 +62,7 @@ class PFCTasks:
 
     def conflict_resolution_task(self, topic):
         description = dedent(
-            """
+            f"""
             Task: Monitor and resolve conflicts within a team or project related to '{topic}'.
             Actions Required:
             - Identify sources of conflict and involved parties within the context of '{topic}'.
@@ -80,7 +80,7 @@ class PFCTasks:
 
     def social_cognition_task(self, topic):
         description = dedent(
-            """
+            f"""
             Task: Analyze and enhance social dynamics within a team or group to improve communication and effectiveness concerning '{topic}'.
             Actions Required:
             - Assess the current social interactions and their impact on team performance in relation to '{topic}'.

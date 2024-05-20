@@ -16,7 +16,7 @@ python-dotenv = "^1.0.1"
 ruff = "0.4.4"
 
 [tool.poetry.scripts]
-scan = "scan.main:main"
+run-scan = "scan.main:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

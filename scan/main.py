@@ -1,9 +1,10 @@
 # main.py
 
 import os
+
 from crewai import Crew, Process
-from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from scan.errors import MissingEnvironmentVairableError
 from scan.scan_agents import PFCAgents

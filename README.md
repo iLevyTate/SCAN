@@ -1,7 +1,7 @@
 # SCAN Project
 
-| Link                                      | Description |
-| :---------------------------------------- | :---------- |
+| Link                                           | Description |
+| :--------------------------------------------- | :---------- |
 | [SCAN repo](https://github.com/iLevyTate/SCAN) | Codebase    |
 
 ---
@@ -55,12 +55,14 @@ SERPER_API_KEY=your_serper_api_key_here
 ## Usage
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/iLevyTate/SCAN.git
    cd SCAN
    ```
 
 2. **Install the required packages**:
+
    ```bash
    pip install -r requirements.txt
    ```

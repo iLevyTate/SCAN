@@ -1,7 +1,9 @@
 # scan_agents.py
 
-from crewai import Agent
 from textwrap import dedent
+
+from crewai import Agent
+
 from scan.tools.search_tools import SearchTools
 
 

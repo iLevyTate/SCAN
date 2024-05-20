@@ -2,7 +2,8 @@
 
 from crewai import Agent
 from textwrap import dedent
-from tools.search_tools import SearchTools
+from scan.tools.search_tools import SearchTools
+
 
 
 class PFCAgents:

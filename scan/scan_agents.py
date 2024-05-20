@@ -1,9 +1,10 @@
 # scan_agents.py
 
-from crewai import Agent
 from textwrap import dedent
-from scan.tools.search_tools import SearchTools
 
+from crewai import Agent
+
+from scan.tools.search_tools import SearchTools
 
 
 class PFCAgents:

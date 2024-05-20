@@ -2,6 +2,7 @@
 
 import json
 import os
+
 import requests
 from langchain.tools import tool
 
@@ -34,7 +35,7 @@ class SearchTools:
                     )
                 )
             except KeyError:
-                next
+                pass
         return "\n".join(string)
 
     @tool("Search news on the internet")
@@ -64,5 +65,5 @@ class SearchTools:
                     )
                 )
             except KeyError:
-                next
+                pass
         return "\n".join(string)

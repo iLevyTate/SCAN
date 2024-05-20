@@ -27,7 +27,7 @@ class CustomCrew:
             model="gemini-pro",
             verbose=True,
             temperature=0.6,
-            google_api_key=os.getenv("GOOGLE_API_KEY"),
+            google_api_key=self.google_api_key,
         )
 
         self.topic = topic

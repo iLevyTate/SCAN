@@ -20,6 +20,7 @@ from scan.errors import MissingEnvironmentVairableError
 from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
 
+
 class CustomCrew:
     def __init__(self, topic):
         self.topic = topic
@@ -57,6 +58,7 @@ class CustomCrew:
         result = crew.kickoff()
         return result
 
+
 def main() -> int:
     print("## Welcome to the SCAN")
     print("---------------------------------------------------------------")
@@ -75,6 +77,7 @@ def main() -> int:
             continue_analysis = False
 
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

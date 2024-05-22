@@ -1,6 +1,8 @@
 from langchain_openai import ChatOpenAI
 import os
 import time
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+import openai  # Ensure the openai library is correctly imported
 
 class OpenAIWrapper:
     def __init__(self, api_key):
@@ -9,16 +11,7 @@ class OpenAIWrapper:
         os.environ["OPENAI_MODEL_NAME"] = "gpt-3.5-turbo"  # Update the model name here
         self.llm = ChatOpenAI(model="gpt-3.5-turbo")
 
-    def generate(self, prompt, max_tokens=150, max_retries=5):
-        for i in range(max_retries):
-            try:
-                response = self.llm.generate(prompt=prompt, max_tokens=max_tokens)
-                return response.choices[0].text.strip()
-            except openai.RateLimitError as e:
-                wait_time = int(e.headers.get("Retry-After", 60))  # Use the Retry-After header if available
-                print(f"Rate limit exceeded. Retrying after {wait_time} seconds.")
-                time.sleep(wait_time)
-            except openai.OpenAIError as e:
-                print(f"OpenAI error: {e}")
-                return None
-        return None  # Return None if all
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, max=60), retry=retry_if_exception_type(openai.RateLimitError))
+    def generate(self, prompt, max_tokens=150):
+        response = self.llm.generate(prompt=prompt, max_tokens=max_tokens)
+        return response.choices[0].text.strip()

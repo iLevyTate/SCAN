@@ -1,38 +1,31 @@
-# main.py
-
+import sys
 import os
 
-from crewai import Crew, Process
-from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
+# Ensure the project root is in the PYTHONPATH
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from scan.errors import MissingEnvironmentVairableError
-from scan.scan_agents import PFCAgents
-from scan.scan_tasks import PFCTasks
+from dotenv import load_dotenv
+from openai_llm import OpenAIWrapper  # Import the updated wrapper
 
 # Load environment variables from .env file
 load_dotenv()
 
+# Get the OpenAI API key from environment variables
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if not openai_api_key:
+    raise ValueError("The OPENAI_API_KEY environment variable is not set.")
+
+from crewai import Crew, Process
+from scan.errors import MissingEnvironmentVairableError
+from scan.scan_agents import PFCAgents
+from scan.scan_tasks import PFCTasks
 
 class CustomCrew:
     def __init__(self, topic):
-        self.google_api_key = os.getenv("GOOGLE_API_KEY")
-        if not self.google_api_key:
-            raise MissingEnvironmentVairableError(
-                "The GOOGLE_API_KEY environment vairable must be set"
-            )
-
-        # Set up the language model
-        self.llm = ChatGoogleGenerativeAI(
-            model="gemini-pro",
-            verbose=True,
-            temperature=0.6,
-            google_api_key=self.google_api_key,
-        )
-
         self.topic = topic
-        self.agents = PFCAgents(self.llm)
-        self.tasks = PFCTasks(self.agents)
+        self.llm = OpenAIWrapper(api_key=openai_api_key)  # Initialize the LLM wrapper
+        self.agents = PFCAgents(llm=self.llm.llm)  # Initialize agents with OpenAI LLM
+        self.tasks = PFCTasks(self.agents)  # Initialize tasks with agents
 
     def run(self):
         decision_task = self.tasks.complex_decision_making_task(self.topic)
@@ -56,14 +49,13 @@ class CustomCrew:
                 conflict_task,
                 social_task,
             ],
-            manager_llm=self.llm,  # Use the previously defined Google AI LLM as the manager
+            manager_llm=self.llm.llm,  # Use the OpenAI LLM wrapper as the manager
             process=Process.hierarchical,  # Specifies the hierarchical management approach
             memory=True,  # Enable memory usage for enhanced task execution
         )
 
         result = crew.kickoff()
         return result
-
 
 def main() -> int:
     print("## Welcome to the SCAN")
@@ -83,7 +75,6 @@ def main() -> int:
             continue_analysis = False
 
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

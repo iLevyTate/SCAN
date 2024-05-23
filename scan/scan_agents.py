@@ -1,11 +1,7 @@
 # scan_agents.py
 
 from textwrap import dedent
-
 from crewai import Agent
-
-from scan.tools.search_tools import SearchTools
-
 
 class PFCAgents:
     def __init__(self, llm):
@@ -24,10 +20,7 @@ class PFCAgents:
             verbose=True,
             allow_delegation=True,
             cache=True,
-            tools=[
-                SearchTools.search_internet,
-                SearchTools.search_news,
-            ],
+            tools=[],  # Removed the reference to SearchTools
         )
 
     def vmpfc_agent(self):
@@ -43,10 +36,7 @@ class PFCAgents:
             verbose=True,
             allow_delegation=True,
             cache=True,
-            tools=[
-                SearchTools.search_internet,
-                SearchTools.search_news,
-            ],
+            tools=[],  # Removed the reference to SearchTools
         )
 
     def ofc_agent(self):
@@ -62,10 +52,7 @@ class PFCAgents:
             verbose=True,
             allow_delegation=True,
             cache=True,
-            tools=[
-                SearchTools.search_internet,
-                SearchTools.search_news,
-            ],
+            tools=[],  # Removed the reference to SearchTools
         )
 
     def acc_agent(self):
@@ -81,10 +68,7 @@ class PFCAgents:
             verbose=True,
             allow_delegation=True,
             cache=True,
-            tools=[
-                SearchTools.search_internet,
-                SearchTools.search_news,
-            ],
+            tools=[],  # Removed the reference to SearchTools
         )
 
     def mpfc_agent(self):
@@ -100,8 +84,5 @@ class PFCAgents:
             verbose=True,
             allow_delegation=True,
             cache=True,
-            tools=[
-                SearchTools.search_internet,
-                SearchTools.search_news,
-            ],
+            tools=[],  # Removed the reference to SearchTools
         )

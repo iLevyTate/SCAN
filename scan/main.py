@@ -1,6 +1,13 @@
 import os
+
+from crewai import Crew, Process
 from dotenv import load_dotenv
-from openai_llm import OpenAIWrapper  # Import the updated wrapper
+from openai import RateLimitError
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+
+from scan.openai_llm import OpenAIWrapper  # Import the updated wrapper
+from scan.scan_agents import PFCAgents
+from scan.scan_tasks import PFCTasks
 
 # Load environment variables from .env file
 load_dotenv()
@@ -9,11 +16,6 @@ load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
     raise ValueError("The OPENAI_API_KEY environment variable is not set.")
-
-from crewai import Crew, Process
-from scan.errors import MissingEnvironmentVairableError
-from scan.scan_agents import PFCAgents
-from scan.scan_tasks import PFCTasks
 
 
 class CustomCrew:
@@ -50,8 +52,25 @@ class CustomCrew:
             memory=True,  # Enable memory usage for enhanced task execution
         )
 
-        result = crew.kickoff()
+        result = _run_crew(crew)
         return result
+
+
+@retry(
+    stop=stop_after_attempt(5),
+    wait=wait_exponential(multiplier=1, max=60),
+    retry=retry_if_exception_type(RateLimitError),
+)
+def _run_crew(crew):
+    try:
+        return crew.kickoff()
+    except RateLimitError as e:
+        if e.code == "insufficient_quota":
+            raise RuntimeError(
+                "Insufficient quota. Please check your OpenAI plan and billing details."
+            ) from e
+        else:
+            raise
 
 
 def main() -> int:

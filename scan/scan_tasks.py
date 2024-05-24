@@ -1,7 +1,6 @@
 # scan_tasks.py
 
 from textwrap import dedent
-
 from crewai import Task
 
 
@@ -26,8 +25,7 @@ class PFCTasks:
         )
 
     def emotional_risk_assessment_task(self, topic):
-        description = dedent(
-            f"""
+        description = dedent(f"""
             Task: Evaluate decisions involving high emotional impact related to '{topic}'.
             Actions Required:
             - Identify the emotional and psychological factors at play in decisions about '{topic}'.
@@ -35,8 +33,7 @@ class PFCTasks:
             - Recommend strategies to mitigate risks while addressing emotional concerns.
             Expected Output:
             A balanced evaluation report detailing emotional factors, associated risks, and mitigation strategies for '{topic}'.
-        """
-        )
+        """)
         return Task(
             description=description,
             expected_output="An evaluation report with balanced insights into emotional and rational aspects.",
@@ -44,8 +41,7 @@ class PFCTasks:
         )
 
     def reward_evaluation_task(self, topic):
-        description = dedent(
-            f"""
+        description = dedent(f"""
             Task: Assess different actions or options based on potential rewards related to '{topic}'.
             Actions Required:
             - Evaluate the potential rewards associated with each option concerning '{topic}'.
@@ -53,8 +49,7 @@ class PFCTasks:
             - Provide a ranked list of options based on the overall benefit analysis.
             Expected Output:
             A detailed assessment of options with a focus on long-term rewards and strategic benefits related to '{topic}'.
-        """
-        )
+        """)
         return Task(
             description=description,
             expected_output="An assessment document ranking options by potential rewards and strategic value.",
@@ -62,8 +57,7 @@ class PFCTasks:
         )
 
     def conflict_resolution_task(self, topic):
-        description = dedent(
-            f"""
+        description = dedent(f"""
             Task: Monitor and resolve conflicts within a team or project related to '{topic}'.
             Actions Required:
             - Identify sources of conflict and involved parties within the context of '{topic}'.
@@ -71,8 +65,7 @@ class PFCTasks:
             - Develop and implement conflict resolution strategies.
             Expected Output:
             A conflict resolution report with actionable steps and outcomes to enhance team dynamics related to '{topic}'.
-        """
-        )
+        """)
         return Task(
             description=description,
             expected_output="A report detailing conflict resolution strategies and their implementation outcomes.",
@@ -80,8 +73,7 @@ class PFCTasks:
         )
 
     def social_cognition_task(self, topic):
-        description = dedent(
-            f"""
+        description = dedent(f"""
             Task: Analyze and enhance social dynamics within a team or group to improve communication and effectiveness concerning '{topic}'.
             Actions Required:
             - Assess the current social interactions and their impact on team performance in relation to '{topic}'.
@@ -89,8 +81,7 @@ class PFCTasks:
             - Propose interventions to enhance social cognition and team cohesion.
             Expected Output:
             A strategic plan to improve social interactions and team dynamics, backed by social psychological insights related to '{topic}'.
-        """
-        )
+        """)
         return Task(
             description=description,
             expected_output="A strategic plan with interventions for enhancing team dynamics.",

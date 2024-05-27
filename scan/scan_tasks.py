@@ -1,5 +1,3 @@
-# scan_tasks.py
-
 from textwrap import dedent
 from crewai import Task
 
@@ -58,32 +56,33 @@ class PFCTasks:
 
     def conflict_resolution_task(self, topic):
         description = dedent(f"""
-            Task: Monitor and resolve conflicts within a team or project related to '{topic}'.
+            Task: Monitor and resolve conflicts related to '{topic}'.
             Actions Required:
             - Identify sources of conflict and involved parties within the context of '{topic}'.
-            - Analyze the underlying causes of these conflicts.
-            - Develop and implement conflict resolution strategies.
+            - Analyze the underlying causes of these conflicts, detecting any errors in performance or communication.
+            - Develop and implement conflict resolution strategies to address both cognitive and emotional aspects.
+            - Regulate attention and motivation levels to ensure effective conflict resolution and sustained focus on goals.
             Expected Output:
-            A conflict resolution report with actionable steps and outcomes to enhance team dynamics related to '{topic}'.
+            A conflict resolution report with actionable steps and outcomes to enhance performance, resolve conflicts, and maintain attention and motivation related to '{topic}'.
         """)
         return Task(
             description=description,
-            expected_output="A report detailing conflict resolution strategies and their implementation outcomes.",
+            expected_output="A report detailing conflict resolution strategies, performance monitoring, and attention/motivation regulation outcomes.",
             agent=self.agents.acc_agent(),
         )
 
     def social_cognition_task(self, topic):
         description = dedent(f"""
-            Task: Analyze and enhance social dynamics within a team or group to improve communication and effectiveness concerning '{topic}'.
+            Task: Analyze and enhance social dynamics related to '{topic}'.
             Actions Required:
-            - Assess the current social interactions and their impact on team performance in relation to '{topic}'.
-            - Identify areas for improvement in communication and collaboration.
-            - Propose interventions to enhance social cognition and team cohesion.
+            - Assess the current social interactions and their impact on the topic '{topic}'.
+            - Identify areas for improvement in social interactions and self-reflection.
+            - Propose interventions to enhance social cognition and personal growth.
             Expected Output:
-            A strategic plan to improve social interactions and team dynamics, backed by social psychological insights related to '{topic}'.
+            A strategic plan to improve social interactions and personal dynamics, backed by social psychological insights related to '{topic}'.
         """)
         return Task(
             description=description,
-            expected_output="A strategic plan with interventions for enhancing team dynamics.",
+            expected_output="A strategic plan with interventions for enhancing social cognition and personal dynamics.",
             agent=self.agents.mpfc_agent(),
         )

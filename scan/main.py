@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from openai import RateLimitError
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from scan.openai_llm import OpenAIWrapper  # Import the updated wrapper
+from scan.openai_llm import OpenAIWrapper
 from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
 
@@ -21,9 +21,9 @@ if not openai_api_key:
 class CustomCrew:
     def __init__(self, topic):
         self.topic = topic
-        self.llm = OpenAIWrapper(api_key=openai_api_key)  # Initialize the LLM wrapper
-        self.agents = PFCAgents(llm=self.llm.llm)  # Initialize agents with OpenAI LLM
-        self.tasks = PFCTasks(self.agents)  # Initialize tasks with agents
+        self.llm = OpenAIWrapper(api_key=openai_api_key)
+        self.agents = PFCAgents(llm=self.llm.llm, topic=self.topic)
+        self.tasks = PFCTasks(self.agents)
 
     def run(self):
         decision_task = self.tasks.complex_decision_making_task(self.topic)
@@ -47,9 +47,9 @@ class CustomCrew:
                 conflict_task,
                 social_task,
             ],
-            manager_llm=self.llm.llm,  # Use the OpenAI LLM wrapper as the manager
-            process=Process.hierarchical,  # Specifies the hierarchical management approach
-            memory=True,  # Enable memory usage for enhanced task execution
+            manager_llm=self.llm.llm,
+            process=Process.hierarchical,
+            memory=True,
         )
 
         result = _run_crew(crew)
@@ -74,22 +74,23 @@ def _run_crew(crew):
 
 
 def main() -> int:
-    print("## Welcome to the SCAN")
+    print("## Welcome to the SCAN System")
     print("---------------------------------------------------------------")
     continue_analysis = True
     while continue_analysis:
-        topic = input("Please enter the topic you want to analyze: ")
+        topic = input("Please enter the topic you need help with: ")
         print("You entered:", topic)
         custom_crew = CustomCrew(topic)
         result = custom_crew.run()
         print("\n\n########################")
-        print("## Crew AI Operation Result:")
+        print("## SCAN AI Operation Result:")
         print("########################\n")
         print(result)
-        response = input("Do you want to analyze another topic? (yes/no): ")
+        response = input("Would you like to analyze another topic? (yes/no): ")
         if response.lower() != "yes":
             continue_analysis = False
 
+    print("Thank you for using the SCAN System. Have a great day!")
     return 0
 
 

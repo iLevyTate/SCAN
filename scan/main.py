@@ -1,13 +1,18 @@
 import os
+import logging
 
 from crewai import Crew, Process
 from dotenv import load_dotenv
 from openai import RateLimitError
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from scan.openai_llm import OpenAIWrapper
+from scan.openai_llm import OpenAIWrapper  # Import the updated wrapper
 from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -21,9 +26,9 @@ if not openai_api_key:
 class CustomCrew:
     def __init__(self, topic):
         self.topic = topic
-        self.llm = OpenAIWrapper(api_key=openai_api_key)
-        self.agents = PFCAgents(llm=self.llm.llm, topic=self.topic)
-        self.tasks = PFCTasks(self.agents)
+        self.llm = OpenAIWrapper(api_key=openai_api_key)  # Initialize the LLM wrapper
+        self.agents = PFCAgents(llm=self.llm.llm, topic=self.topic)  # Pass topic to agents
+        self.tasks = PFCTasks(self.agents)  # Initialize tasks with agents
 
     def run(self):
         decision_task = self.tasks.complex_decision_making_task(self.topic)
@@ -47,13 +52,28 @@ class CustomCrew:
                 conflict_task,
                 social_task,
             ],
-            manager_llm=self.llm.llm,
-            process=Process.hierarchical,
-            memory=True,
+            manager_llm=self.llm.llm,  # Use the OpenAI LLM wrapper as the manager
+            process=Process.hierarchical,  # Specifies the hierarchical management approach
+            memory=True,  # Enable memory usage for enhanced task execution
         )
 
-        result = _run_crew(crew)
-        return result
+        results = _run_crew(crew)
+        logger.info(f"Raw results: {results}")
+
+        # Directly use the results without converting to or from JSON
+        final_output = self.combine_outputs(results)
+        return final_output
+
+    def combine_outputs(self, results):
+        # Assuming the results are concatenated strings
+        combined_output = f"""
+        Based on the analysis of the topic '{self.topic}', here are the recommended steps and solutions:
+
+        {results}
+
+        By following these steps and integrating these strategies, you can effectively address the challenges related to '{self.topic}' and achieve your goals with greater clarity and focus.
+        """
+        return combined_output
 
 
 @retry(
@@ -86,9 +106,8 @@ def main() -> int:
         print("## SCAN AI Operation Result:")
         print("########################\n")
         print(result)
-        response = input("Would you like to analyze another topic? (yes/no): ")
-        if response.lower() != "yes":
-            continue_analysis = False
+
+        continue_analysis = False
 
     print("Thank you for using the SCAN System. Have a great day!")
     return 0

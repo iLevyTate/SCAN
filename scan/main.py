@@ -1,4 +1,5 @@
 import os
+import logging
 
 from crewai import Crew, Process
 from dotenv import load_dotenv
@@ -8,6 +9,10 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_ex
 from scan.openai_llm import OpenAIWrapper  # Import the updated wrapper
 from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -22,7 +27,7 @@ class CustomCrew:
     def __init__(self, topic):
         self.topic = topic
         self.llm = OpenAIWrapper(api_key=openai_api_key)  # Initialize the LLM wrapper
-        self.agents = PFCAgents(llm=self.llm.llm)  # Initialize agents with OpenAI LLM
+        self.agents = PFCAgents(llm=self.llm.llm, topic=self.topic)  # Pass topic to agents
         self.tasks = PFCTasks(self.agents)  # Initialize tasks with agents
 
     def run(self):
@@ -52,8 +57,23 @@ class CustomCrew:
             memory=True,  # Enable memory usage for enhanced task execution
         )
 
-        result = _run_crew(crew)
-        return result
+        results = _run_crew(crew)
+        logger.info("Raw results: %s", results)
+
+        # Directly use the results without converting to or from JSON
+        final_output = self.combine_outputs(results)
+        return final_output
+
+    def combine_outputs(self, results):
+        # Assuming the results are concatenated strings
+        combined_output = f"""
+        Based on the analysis of the topic '{self.topic}', here are the recommended steps and solutions:
+
+        {results}
+
+        By following these steps and integrating these strategies, you can effectively address the challenges related to '{self.topic}' and achieve your goals with greater clarity and focus.
+        """
+        return combined_output
 
 
 @retry(
@@ -74,22 +94,22 @@ def _run_crew(crew):
 
 
 def main() -> int:
-    print("## Welcome to the SCAN")
+    print("## Welcome to the SCAN System")
     print("---------------------------------------------------------------")
     continue_analysis = True
     while continue_analysis:
-        topic = input("Please enter the topic you want to analyze: ")
+        topic = input("Please enter the topic you need help with: ")
         print("You entered:", topic)
         custom_crew = CustomCrew(topic)
         result = custom_crew.run()
         print("\n\n########################")
-        print("## Crew AI Operation Result:")
+        print("## SCAN AI Operation Result:")
         print("########################\n")
         print(result)
-        response = input("Do you want to analyze another topic? (yes/no): ")
-        if response.lower() != "yes":
-            continue_analysis = False
 
+        continue_analysis = False
+
+    print("Thank you for using the SCAN System. Have a great day!")
     return 0
 
 

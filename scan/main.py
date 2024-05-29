@@ -58,7 +58,7 @@ class CustomCrew:
         )
 
         results = _run_crew(crew)
-        logger.info(f"Raw results: {results}")
+        logger.info("Raw results: %s", results)
 
         # Directly use the results without converting to or from JSON
         final_output = self.combine_outputs(results)

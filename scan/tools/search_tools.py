@@ -13,6 +13,9 @@ class SearchTools:
         top_result_to_return = 4
         url = "https://google.serper.dev/search"
         payload = json.dumps({"q": query})
+        if os.environ["SERPER_API_KEY"] is None:
+            raise ValueError("The SERPER_API_KEY environment variable must be set")
+        
         headers = {"X-API-KEY": os.environ["SERPER_API_KEY"], "content-type": "application/json"}
         response = requests.request("POST", url, headers=headers, data=payload)
         # check if there is an organic key

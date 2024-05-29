@@ -37,6 +37,6 @@ class SearchTools:
                         )
                     )
                 except KeyError:
-                    next
+                    pass
 
             return "\n".join(string)

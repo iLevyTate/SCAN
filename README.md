@@ -35,16 +35,17 @@ To configure the project, create a `.env` file in the root directory with the fo
 
 1.  **Clone the repository**:
     
-    `git clone https://github.com/iLevyTate/SCAN.git
-   cd SCAN` 
+    `git clone https://github.com/iLevyTate/SCAN.git`
+
+    `cd SCAN`
     
-2.  **Install the required packages**:
+3.  **Install the required packages**:
     
     `poetry install` 
     
-3.  **Set up your environment variables** in the `.env` file as shown above.
+4.  **Set up your environment variables** in the `.env` file as shown above.
     
-4.  **Run the main script**:
+5.  **Run the main script**:
     
     `poetry run run-scan` 
     

@@ -1,4 +1,6 @@
-# SCAN Project
+# SCAN
+
+![SCANLogo](https://github.com/user-attachments/assets/ed26854d-6bb6-44f7-b138-612bdcf72867)
 
 The SCAN (Synthetic Cognitive Augmentation Network) project aims to develop a collaborative multi-agent system that replicates the functions of the prefrontal cortex (PFC) using AI agents to enhance problem-solving, planning, decision-making, and other PFC-related activities.
 

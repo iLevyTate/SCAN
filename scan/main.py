@@ -99,7 +99,7 @@ def _run_crew(crew):
         logger.error("Whoops! We hit a rate limit: %s", e)
         raise
     except Exception as e:
-        logger.error(f"Oh no! Something unexpected happened: {e}")
+        logger.error("Oh no! Something unexpected happened: %s", e)
         raise
 
 def classify_input(input_text):

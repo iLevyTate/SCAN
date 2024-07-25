@@ -130,7 +130,7 @@ def handle_input(user_input, conversation_history):
             custom_crew = CustomCrew(topic=user_input)
             response = custom_crew.run(conversation_history)
         else:
-            prompt = general_prompt_template.format(query=user_input)
+            prompt = GENERAL_PROMPT_TEMPLATE.format(query=user_input)
             response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[

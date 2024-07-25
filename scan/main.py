@@ -120,7 +120,7 @@ def classify_input(input_text):
             logger.error("Received an unexpected response format from OpenAI API.")
             return "General task"
     except Exception as e:
-        logger.error(f"Error in classifying input: {str(e)}")
+        logger.error("Error in classifying input: %s", e)
         return "General task"  # Default to general task if something goes wrong
 
 def handle_input(user_input, conversation_history):

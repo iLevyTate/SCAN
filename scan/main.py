@@ -96,7 +96,7 @@ def _run_crew(crew):
     try:
         return crew.kickoff()
     except RateLimitError as e:
-        logger.error(f"Whoops! We hit a rate limit: {e}")
+        logger.error("Whoops! We hit a rate limit: %s", e)
         raise
     except Exception as e:
         logger.error(f"Oh no! Something unexpected happened: {e}")

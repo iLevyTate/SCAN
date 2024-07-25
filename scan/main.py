@@ -146,7 +146,7 @@ def handle_input(user_input, conversation_history):
             logger.error("Hmm, looks like we didn't get a response. Let's try that again!")
             return "I'm sorry, I couldn't generate a response. Could you please rephrase your question?"
     except Exception as e:
-        logger.exception(f"Whoops! Something unexpected happened: {e}")
+        logger.exception(f"Whoops! Something unexpected happened: %s", e)
         return "I encountered an error while processing your request. Let's give it another shot!"
 
 def main() -> int:

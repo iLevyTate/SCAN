@@ -182,7 +182,7 @@ def main() -> int:
                     break
             
         except Exception as e:
-            logger.exception(f"Oops! We hit an unexpected bump: {e}")
+            logger.exception(f"Oops! We hit an unexpected bump: %s", e)
             print("I ran into a little trouble there. Let's try again, shall we?")
 
     print("Thanks for using the SCAN System! I hope you found it helpful. Take care and come back anytime!")

@@ -30,7 +30,7 @@ if not openai_api_key:
 client = OpenAI(api_key=openai_api_key)
 
 # Define a prompt template for general queries
-general_prompt_template = PromptTemplate(
+GENERAL_PROMPT_TEMPLATE = PromptTemplate(
     input_variables=["query"],
     template="You are a helpful AI assistant. Provide a friendly and informative response to the following query: {query}"
 )

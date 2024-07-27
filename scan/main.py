@@ -1,12 +1,10 @@
 import logging
 import os
-
 from crewai import Crew, Process
 from dotenv import load_dotenv
 from langchain_core.prompts import PromptTemplate
 from openai import OpenAI, RateLimitError
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
-
 from scan.openai_llm import OpenAIWrapper
 from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
@@ -41,9 +39,10 @@ class CustomCrew:
         self.llm = OpenAIWrapper(api_key=openai_api_key)
         self.agents = PFCAgents(llm=self.llm.llm, topic=self.topic)
         self.tasks = PFCTasks(self.agents)
+        self.conversation_history = []
 
-    def run(self, conversation_history):
-        context = "\n".join(conversation_history[-5:])  # Use last 5 exchanges for context
+    def run(self):
+        context = "\n".join(self.conversation_history[-5:])  # Use last 5 exchanges for context
         
         decision_task = self.tasks.complex_decision_making_task(self.topic, context)
         emotional_task = self.tasks.emotional_risk_assessment_task(self.topic, context)
@@ -123,12 +122,11 @@ def classify_input(input_text):
         logger.error("Error in classifying input: %s", e)
         return "General task"  # Default to general task if something goes wrong
 
-def handle_input(user_input, conversation_history):
+def handle_input(user_input, custom_crew):
     try:
         classification = classify_input(user_input)
         if "PFC task" in classification:
-            custom_crew = CustomCrew(topic=user_input)
-            response = custom_crew.run(conversation_history)
+            response = custom_crew.run()
         else:
             prompt = GENERAL_PROMPT_TEMPLATE.format(query=user_input)
             response = client.chat.completions.create(
@@ -140,7 +138,7 @@ def handle_input(user_input, conversation_history):
                 temperature=0.7
             ).choices[0].message.content.strip()
         if response is not None:
-            conversation_history.append(f"Bot: {response}")
+            custom_crew.conversation_history.append(f"Bot: {response}")
             return response
         else:
             logger.error("Hmm, looks like we didn't get a response. Let's try that again!")
@@ -152,8 +150,8 @@ def handle_input(user_input, conversation_history):
 def main() -> int:
     print("Hey there! Welcome to the SCAN System. How can I help you today?")
     print("---------------------------------------------------------------")
-    conversation_history = []
     combined_output = ""
+    custom_crew = None
     
     while True:
         try:
@@ -163,10 +161,12 @@ def main() -> int:
             
             print(f"Got it! You're interested in: {user_input}")
             
-            # Add the user's input to the conversation history
-            conversation_history.append(f"User: {user_input}")
+            if custom_crew is None:
+                custom_crew = CustomCrew(topic=user_input)
             
-            response = handle_input(user_input, conversation_history)
+            custom_crew.conversation_history.append(f"User: {user_input}")
+            
+            response = handle_input(user_input, custom_crew)
             combined_output += "\n" + response + "\n"
             print("\n" + combined_output + "\n")
             
@@ -174,8 +174,8 @@ def main() -> int:
                 follow_up = input("Do you have a follow-up question? (yes/no): ").lower()
                 if follow_up.startswith('y'):
                     follow_up_question = input("What's your follow-up question? ")
-                    conversation_history.append(f"User: {follow_up_question}")
-                    follow_up_response = handle_input(follow_up_question, conversation_history)
+                    custom_crew.conversation_history.append(f"User: {follow_up_question}")
+                    follow_up_response = handle_input(follow_up_question, custom_crew)
                     combined_output += "\n" + follow_up_response + "\n"
                     print("\n" + combined_output + "\n")
                 else:

@@ -1,10 +1,12 @@
 import logging
 import os
+
 from crewai import Crew, Process
 from dotenv import load_dotenv
 from langchain_core.prompts import PromptTemplate
 from openai import OpenAI, RateLimitError
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+
 from scan.openai_llm import OpenAIWrapper
 from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
@@ -144,7 +146,7 @@ def handle_input(user_input, custom_crew):
             logger.error("Hmm, looks like we didn't get a response. Let's try that again!")
             return "I'm sorry, I couldn't generate a response. Could you please rephrase your question?"
     except Exception as e:
-        logger.exception(f"Whoops! Something unexpected happened: %s", e)
+        logger.exception("Whoops! Something unexpected happened: %s", e)
         return "I encountered an error while processing your request. Let's give it another shot!"
 
 def main() -> int:
@@ -182,7 +184,7 @@ def main() -> int:
                     break
             
         except Exception as e:
-            logger.exception(f"Oops! We hit an unexpected bump: %s", e)
+            logger.exception("Oops! We hit an unexpected bump: %s", e)
             print("I ran into a little trouble there. Let's try again, shall we?")
 
     print("Thanks for using the SCAN System! I hope you found it helpful. Take care and come back anytime!")

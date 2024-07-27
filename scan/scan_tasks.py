@@ -1,5 +1,6 @@
 from crewai import Task
 
+
 class PFCTasks:
     def __init__(self, agents):
         self.agents = agents

@@ -1,22 +1,17 @@
-import logging
 import os
+import logging
 
 from crewai import Crew, Process
 from dotenv import load_dotenv
-from langchain_core.prompts import PromptTemplate
-from openai import OpenAI, RateLimitError
+from openai import RateLimitError
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from scan.openai_llm import OpenAIWrapper
+from scan.openai_llm import OpenAIWrapper  # Import the updated wrapper
 from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='app.log'
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
@@ -27,38 +22,28 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
     raise ValueError("The OPENAI_API_KEY environment variable is not set.")
 
-client = OpenAI(api_key=openai_api_key)
-
-# Define a prompt template for general queries
-GENERAL_PROMPT_TEMPLATE = PromptTemplate(
-    input_variables=["query"],
-    template="You are a helpful AI assistant. Provide a friendly and informative response to the following query: {query}"
-)
 
 class CustomCrew:
     def __init__(self, topic):
         self.topic = topic
-        self.llm = OpenAIWrapper(api_key=openai_api_key)
-        self.agents = PFCAgents(llm=self.llm.llm, topic=self.topic)
-        self.tasks = PFCTasks(self.agents)
-        self.conversation_history = []
+        self.llm = OpenAIWrapper(api_key=openai_api_key)  # Initialize the LLM wrapper
+        self.agents = PFCAgents(llm=self.llm.llm, topic=self.topic)  # Pass topic to agents
+        self.tasks = PFCTasks(self.agents)  # Initialize tasks with agents
 
     def run(self):
-        context = "\n".join(self.conversation_history[-5:])  # Use last 5 exchanges for context
-        
-        decision_task = self.tasks.complex_decision_making_task(self.topic, context)
-        emotional_task = self.tasks.emotional_risk_assessment_task(self.topic, context)
-        reward_task = self.tasks.reward_evaluation_task(self.topic, context)
-        conflict_task = self.tasks.conflict_resolution_task(self.topic, context)
-        social_task = self.tasks.social_cognition_task(self.topic, context)
+        decision_task = self.tasks.complex_decision_making_task(self.topic)
+        emotional_task = self.tasks.emotional_risk_assessment_task(self.topic)
+        reward_task = self.tasks.reward_evaluation_task(self.topic)
+        conflict_task = self.tasks.conflict_resolution_task(self.topic)
+        social_task = self.tasks.social_cognition_task(self.topic)
 
         crew = Crew(
             agents=[
-                self.agents.dlpfc_agent(context),
-                self.agents.vmpfc_agent(context),
-                self.agents.ofc_agent(context),
-                self.agents.acc_agent(context),
-                self.agents.mpfc_agent(context),
+                self.agents.dlpfc_agent(),
+                self.agents.vmpfc_agent(),
+                self.agents.ofc_agent(),
+                self.agents.acc_agent(),
+                self.agents.mpfc_agent(),
             ],
             tasks=[
                 decision_task,
@@ -67,26 +52,29 @@ class CustomCrew:
                 conflict_task,
                 social_task,
             ],
-            manager_llm=self.llm.llm,
-            process=Process.hierarchical,
-            memory=True,
+            manager_llm=self.llm.llm,  # Use the OpenAI LLM wrapper as the manager
+            process=Process.hierarchical,  # Specifies the hierarchical management approach
+            memory=True,  # Enable memory usage for enhanced task execution
         )
 
         results = _run_crew(crew)
         logger.info("Raw results: %s", results)
 
+        # Directly use the results without converting to or from JSON
         final_output = self.combine_outputs(results)
         return final_output
 
     def combine_outputs(self, results):
+        # Assuming the results are concatenated strings
         combined_output = f"""
-        Based on our analysis of '{self.topic}', here are some recommendations and insights:
+        Based on the analysis of the topic '{self.topic}', here are the recommended steps and solutions:
 
         {results}
 
-        By following these suggestions, you can tackle the challenges related to '{self.topic}' more effectively and achieve your goals with greater focus and clarity.
+        By following these steps and integrating these strategies, you can effectively address the challenges related to '{self.topic}' and achieve your goals with greater clarity and focus.
         """
         return combined_output
+
 
 @retry(
     stop=stop_after_attempt(5),
@@ -97,98 +85,33 @@ def _run_crew(crew):
     try:
         return crew.kickoff()
     except RateLimitError as e:
-        logger.error("Whoops! We hit a rate limit: %s", e)
-        raise
-    except Exception as e:
-        logger.error("Oh no! Something unexpected happened: %s", e)
-        raise
+        if e.code == "insufficient_quota":
+            raise RuntimeError(
+                "Insufficient quota. Please check your OpenAI plan and billing details."
+            ) from e
+        else:
+            raise
 
-def classify_input(input_text):
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are an AI assistant. Classify the following input as either 'PFC task' or 'General task' based on its content. For PFC tasks, provide a brief description of which PFC functions might be involved (e.g., decision-making, emotional regulation, executive functions)."},
-                {"role": "user", "content": f"Classify this input: {input_text}"}
-            ],
-            max_tokens=100,
-            temperature=0.3
-        )
-        if response.choices and response.choices[0].message and response.choices[0].message.content:
-            classification = response.choices[0].message.content.strip()
-            return classification
-        else:
-            logger.error("Received an unexpected response format from OpenAI API.")
-            return "General task"
-    except Exception as e:
-        logger.error("Error in classifying input: %s", e)
-        return "General task"  # Default to general task if something goes wrong
-
-def handle_input(user_input, custom_crew):
-    try:
-        classification = classify_input(user_input)
-        if "PFC task" in classification:
-            response = custom_crew.run()
-        else:
-            prompt = GENERAL_PROMPT_TEMPLATE.format(query=user_input)
-            response = client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": prompt}
-                ],
-                max_tokens=500,
-                temperature=0.7
-            ).choices[0].message.content.strip()
-        if response is not None:
-            custom_crew.conversation_history.append(f"Bot: {response}")
-            return response
-        else:
-            logger.error("Hmm, looks like we didn't get a response. Let's try that again!")
-            return "I'm sorry, I couldn't generate a response. Could you please rephrase your question?"
-    except Exception as e:
-        logger.exception("Whoops! Something unexpected happened: %s", e)
-        return "I encountered an error while processing your request. Let's give it another shot!"
 
 def main() -> int:
-    print("Hey there! Welcome to the SCAN System. How can I help you today?")
+    print("## Welcome to the SCAN System")
     print("---------------------------------------------------------------")
-    combined_output = ""
-    custom_crew = None
-    
-    while True:
-        try:
-            user_input = input("What would you like to know about or analyze? (Type 'exit' to end) ")
-            if user_input.lower() == 'exit':
-                break
-            
-            print(f"Got it! You're interested in: {user_input}")
-            
-            if custom_crew is None:
-                custom_crew = CustomCrew(topic=user_input)
-            
-            custom_crew.conversation_history.append(f"User: {user_input}")
-            
-            response = handle_input(user_input, custom_crew)
-            combined_output += "\n" + response + "\n"
-            print("\n" + combined_output + "\n")
-            
-            while True:
-                follow_up = input("Do you have a follow-up question? (yes/no): ").lower()
-                if follow_up.startswith('y'):
-                    follow_up_question = input("What's your follow-up question? ")
-                    custom_crew.conversation_history.append(f"User: {follow_up_question}")
-                    follow_up_response = handle_input(follow_up_question, custom_crew)
-                    combined_output += "\n" + follow_up_response + "\n"
-                    print("\n" + combined_output + "\n")
-                else:
-                    break
-            
-        except Exception as e:
-            logger.exception("Oops! We hit an unexpected bump: %s", e)
-            print("I ran into a little trouble there. Let's try again, shall we?")
+    continue_analysis = True
+    while continue_analysis:
+        topic = input("Please enter the topic you need help with: ")
+        print("You entered:", topic)
+        custom_crew = CustomCrew(topic)
+        result = custom_crew.run()
+        print("\n\n########################")
+        print("## SCAN AI Operation Result:")
+        print("########################\n")
+        print(result)
 
-    print("Thanks for using the SCAN System! I hope you found it helpful. Take care and come back anytime!")
+        continue_analysis = False
+
+    print("Thank you for using the SCAN System. Have a great day!")
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

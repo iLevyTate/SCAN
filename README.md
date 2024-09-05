@@ -39,7 +39,6 @@ The SCAN project offers a multi-agent system designed to simulate the functions 
 - **LangChain**: Framework for building language model applications
 - **LLM Integrations**:
   - OpenAI GPT API (used in primary code but can be replaced with various LLMs)
-  - Serper: API for integrating search capabilities
 
 ## Solution
 
@@ -52,9 +51,6 @@ To configure the project, create a `.env` file in the root directory with the fo
 ```env
 # OpenAI API Key
 OPENAI_API_KEY=your_openai_api_key_here
-
-# Serper API Key
-SERPER_API_KEY=your_serper_api_key_here
 ```
 
 ## Usage
@@ -82,7 +78,6 @@ If the API key from the `.env` file is not being picked up, you can export it di
 
 ```bash
 export OPENAI_API_KEY=your_openai_api_key_here
-export SERPER_API_KEY=your_serper_api_key_here
 ```
 
 ### Run the Main Script
@@ -104,7 +99,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **CrewAI**: For providing the framework to create autonomous AI agents.
 - **LangChain**: For the framework to build language model applications.
 - **OpenAI**: For the language processing capabilities.
-- **Serper**: For integrating search capabilities.
 - **Contributors**: Thanks to all contributors who have helped in building and improving the SCAN project.
 
 ## Poetry Instructions

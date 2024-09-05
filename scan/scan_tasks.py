@@ -1,12 +1,17 @@
 from textwrap import dedent
 from crewai import Task
 
-
 class PFCTasks:
     def __init__(self, agents):
+        if not agents:
+            raise ValueError("Agents must be initialized.")
         self.agents = agents
 
     def complex_decision_making_task(self, topic):
+        dlpfc_agent = self.agents.dlpfc_agent()
+        if dlpfc_agent is None:
+            raise ValueError("DLPFC agent is not initialized.")
+
         description = dedent(f"""
             Task: Analyze a complex situation involving the topic '{topic}'.
             Actions Required:
@@ -19,10 +24,14 @@ class PFCTasks:
         return Task(
             description=description,
             expected_output="A comprehensive analytical report with strategic recommendations.",
-            agent=self.agents.dlpfc_agent(),
+            agent=dlpfc_agent,
         )
 
     def emotional_risk_assessment_task(self, topic):
+        vmpfc_agent = self.agents.vmpfc_agent()
+        if vmpfc_agent is None:
+            raise ValueError("VMPFC agent is not initialized.")
+
         description = dedent(f"""
             Task: Evaluate decisions involving high emotional impact related to '{topic}'.
             Actions Required:
@@ -35,10 +44,14 @@ class PFCTasks:
         return Task(
             description=description,
             expected_output="An evaluation report with balanced insights into emotional and rational aspects.",
-            agent=self.agents.vmpfc_agent(),
+            agent=vmpfc_agent,
         )
 
     def reward_evaluation_task(self, topic):
+        ofc_agent = self.agents.ofc_agent()
+        if ofc_agent is None:
+            raise ValueError("OFC agent is not initialized.")
+
         description = dedent(f"""
             Task: Assess different actions or options based on potential rewards related to '{topic}'.
             Actions Required:
@@ -51,10 +64,14 @@ class PFCTasks:
         return Task(
             description=description,
             expected_output="An assessment document ranking options by potential rewards and strategic value.",
-            agent=self.agents.ofc_agent(),
+            agent=ofc_agent,
         )
 
     def conflict_resolution_task(self, topic):
+        acc_agent = self.agents.acc_agent()
+        if acc_agent is None:
+            raise ValueError("ACC agent is not initialized.")
+
         description = dedent(f"""
             Task: Monitor and resolve conflicts related to '{topic}'.
             Actions Required:
@@ -68,10 +85,14 @@ class PFCTasks:
         return Task(
             description=description,
             expected_output="A report detailing conflict resolution strategies, performance monitoring, and attention/motivation regulation outcomes.",
-            agent=self.agents.acc_agent(),
+            agent=acc_agent,
         )
 
     def social_cognition_task(self, topic):
+        mpfc_agent = self.agents.mpfc_agent()
+        if mpfc_agent is None:
+            raise ValueError("MPFC agent is not initialized.")
+
         description = dedent(f"""
             Task: Analyze and enhance social dynamics related to '{topic}'.
             Actions Required:
@@ -84,5 +105,5 @@ class PFCTasks:
         return Task(
             description=description,
             expected_output="A strategic plan with interventions for enhancing social cognition and personal dynamics.",
-            agent=self.agents.mpfc_agent(),
+            agent=mpfc_agent,
         )

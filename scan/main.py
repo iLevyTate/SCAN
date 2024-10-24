@@ -11,7 +11,7 @@ from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
@@ -21,7 +21,10 @@ load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
     raise ValueError("The OPENAI_API_KEY environment variable is not set.")
-
+else:
+    logger.debug("OpenAI API Key loaded successfully.")
+    # Optionally log part of the key for verification
+    logger.debug(f"OpenAI API Key starts with: {openai_api_key[:5]}")
 
 class CustomCrew:
     def __init__(self, topic):

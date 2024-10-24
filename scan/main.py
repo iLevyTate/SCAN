@@ -1,17 +1,18 @@
+# scan/main.py
+
 import os
 import logging
 
-from crewai import Crew, Process
 from dotenv import load_dotenv
-from openai import RateLimitError
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from scan.openai_llm import OpenAIWrapper  # Import the updated wrapper
+from scan.openai_llm import OpenAIWrapper
 from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
+from scan.errors import MissingEnvironmentVariableError
+from crewai import Crew, Process
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
@@ -20,26 +21,33 @@ load_dotenv()
 # Get the OpenAI API key from environment variables
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
-    raise ValueError("The OPENAI_API_KEY environment variable is not set.")
-else:
-    logger.debug("OpenAI API Key loaded successfully.")
-    # Optionally log part of the key for verification
-    logger.debug(f"OpenAI API Key starts with: {openai_api_key[:5]}")
+    raise MissingEnvironmentVariableError("OPENAI_API_KEY")
+
 
 class CustomCrew:
-    def __init__(self, topic):
-        self.topic = topic
-        self.llm = OpenAIWrapper(api_key=openai_api_key)  # Initialize the LLM wrapper
-        self.agents = PFCAgents(llm=self.llm.llm, topic=self.topic)  # Pass topic to agents
-        self.tasks = PFCTasks(self.agents)  # Initialize tasks with agents
+    """Custom crew to manage PFC agents and tasks."""
 
-    def run(self):
+    def __init__(self, topic: str):
+        self.topic = topic
+        # Initialize manager LLM
+        self.manager_llm = OpenAIWrapper(api_key=openai_api_key, model_name='gpt-4').llm
+        # Initialize agents
+        logger.info("Initializing agents...")
+        self.agents = PFCAgents(api_key=openai_api_key, topic=self.topic)
+        # Initialize tasks
+        logger.info("Initializing tasks...")
+        self.tasks = PFCTasks(agents=self.agents)
+
+    def run(self) -> str:
+        """Run the crew to execute all tasks and generate the final output."""
+        # Initialize tasks
         decision_task = self.tasks.complex_decision_making_task(self.topic)
         emotional_task = self.tasks.emotional_risk_assessment_task(self.topic)
         reward_task = self.tasks.reward_evaluation_task(self.topic)
         conflict_task = self.tasks.conflict_resolution_task(self.topic)
         social_task = self.tasks.social_cognition_task(self.topic)
 
+        # Create a Crew
         crew = Crew(
             agents=[
                 self.agents.dlpfc_agent(),
@@ -55,52 +63,59 @@ class CustomCrew:
                 conflict_task,
                 social_task,
             ],
-            manager_llm=self.llm.llm,  # Use the OpenAI LLM wrapper as the manager
-            process=Process.hierarchical,  # Specifies the hierarchical management approach
-            memory=True,  # Enable memory usage for enhanced task execution
+            manager_llm=self.manager_llm,  # Use manager LLM
+            process=Process.hierarchical,
+            memory=True,
         )
 
-        results = _run_crew(crew)
-        logger.info("Raw results: %s", results)
+        logger.info("Starting crew execution...")
+        # Kick off the crew and get the structured output
+        crew_output = crew.kickoff()
+        logger.info("Crew execution completed.")
 
-        # Directly use the results without converting to or from JSON
-        final_output = self.combine_outputs(results)
+        # Combine results
+        final_output = self.combine_outputs(crew_output)
         return final_output
 
-    def combine_outputs(self, results):
-        # Assuming the results are concatenated strings
-        combined_output = f"""
-        Based on the analysis of the topic '{self.topic}', here are the recommended steps and solutions:
+    def combine_outputs(self, crew_output: dict) -> str:
+        """Combine the outputs from all agents into a final report."""
+        # Extract task outputs from the crew output
+        task_results = crew_output.get('tasks', {})
 
-        {results}
+        # Retrieve outputs for each task
+        decision_output = task_results.get('complex_decision_making_task', {}).get('output', 'No output')
+        emotional_output = task_results.get('emotional_risk_assessment_task', {}).get('output', 'No output')
+        reward_output = task_results.get('reward_evaluation_task', {}).get('output', 'No output')
+        conflict_output = task_results.get('conflict_resolution_task', {}).get('output', 'No output')
+        social_output = task_results.get('social_cognition_task', {}).get('output', 'No output')
 
-        By following these steps and integrating these strategies, you can effectively address the challenges related to '{self.topic}' and achieve your goals with greater clarity and focus.
-        """
-        return combined_output
+        # Format the final report
+        final_report = f"""
+Final analysis on '{self.topic}':
 
+1. Decision-making report (DLPFC):
+{decision_output}
 
-@retry(
-    stop=stop_after_attempt(5),
-    wait=wait_exponential(multiplier=1, max=60),
-    retry=retry_if_exception_type(RateLimitError),
-)
-def _run_crew(crew):
-    try:
-        return crew.kickoff()
-    except RateLimitError as e:
-        if e.code == "insufficient_quota":
-            raise RuntimeError(
-                "Insufficient quota. Please check your OpenAI plan and billing details."
-            ) from e
-        else:
-            raise
+2. Emotional analysis (VMPFC):
+{emotional_output}
+
+3. Reward evaluation (OFC):
+{reward_output}
+
+4. Conflict resolution (ACC):
+{conflict_output}
+
+5. Social insights (MPFC):
+{social_output}
+"""
+        return final_report
 
 
 def main() -> int:
+    """Main entry point for the SCAN system."""
     print("## Welcome to the SCAN System")
     print("---------------------------------------------------------------")
-    continue_analysis = True
-    while continue_analysis:
+    try:
         topic = input("Please enter the topic you need help with: ")
         print("You entered:", topic)
         custom_crew = CustomCrew(topic)
@@ -109,8 +124,12 @@ def main() -> int:
         print("## SCAN AI Operation Result:")
         print("########################\n")
         print(result)
-
-        continue_analysis = False
+    except MissingEnvironmentVariableError as e:
+        logger.error(e.message)
+        print(e.message)
+    except Exception as e:
+        logger.exception("An unexpected error occurred: %s", e)
+        print(f"An unexpected error occurred: {e}")
 
     print("Thank you for using the SCAN System. Have a great day!")
     return 0

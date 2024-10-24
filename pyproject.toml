@@ -7,12 +7,16 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.10, <=3.13"  # The way crewai set its python requirement made this necessary
-crewai = "^0.30.11"
+crewai = "0.30.11"
 duckduckgo-search = "^6.1.0"
 langchain_google_genai = "^1.0.4"
 python-dotenv = "^1.0.1"
 tenacity = "^8.3.0"
 openai = "^1.52.1"
+tiktoken = "0.7.0"
+langchain-community = "0.0.25"
+langchain = "0.1.10"
+chromadb = "^0.5.15"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.4.4"

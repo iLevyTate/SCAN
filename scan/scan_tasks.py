@@ -1,19 +1,22 @@
+# scan/scan_tasks.py
+
 from textwrap import dedent
+
 from crewai import Task
 
+
 class PFCTasks:
+    """Defines the tasks assigned to each PFC agent."""
+
     def __init__(self, agents):
         if not agents:
             raise ValueError("Agents must be initialized.")
         self.agents = agents
 
     def complex_decision_making_task(self, topic):
-        dlpfc_agent = self.agents.dlpfc_agent()
-        if dlpfc_agent is None:
-            raise ValueError("DLPFC agent is not initialized.")
-
+        """Task for DLPFC agent to make complex decisions."""
         description = dedent(f"""
-            Task: Analyze a complex situation involving the topic '{topic}'.
+            Task: Analyze a complex situation involving '{topic}' by integrating insights from other agents.
             Actions Required:
             - Conduct a thorough analysis of all available data on '{topic}'.
             - Synthesize information to identify key trends and insights.
@@ -21,17 +24,21 @@ class PFCTasks:
             Expected Output:
             A comprehensive report that outlines the situation analysis, key findings, and strategic recommendations on '{topic}'.
         """)
-        return Task(
+        task = Task(
+            name="complex_decision_making_task",
             description=description,
             expected_output="A comprehensive analytical report with strategic recommendations.",
-            agent=dlpfc_agent,
+            agent=self.agents.dlpfc_agent(),
+            dependencies=[
+                "emotional_risk_assessment_task",
+                "reward_evaluation_task",
+                "social_cognition_task",
+            ],  # Task dependencies
         )
+        return task
 
     def emotional_risk_assessment_task(self, topic):
-        vmpfc_agent = self.agents.vmpfc_agent()
-        if vmpfc_agent is None:
-            raise ValueError("VMPFC agent is not initialized.")
-
+        """Task for VMPFC agent to assess emotional risks."""
         description = dedent(f"""
             Task: Evaluate decisions involving high emotional impact related to '{topic}'.
             Actions Required:
@@ -41,17 +48,16 @@ class PFCTasks:
             Expected Output:
             A balanced evaluation report detailing emotional factors, associated risks, and mitigation strategies for '{topic}'.
         """)
-        return Task(
+        task = Task(
+            name="emotional_risk_assessment_task",
             description=description,
             expected_output="An evaluation report with balanced insights into emotional and rational aspects.",
-            agent=vmpfc_agent,
+            agent=self.agents.vmpfc_agent(),
         )
+        return task
 
     def reward_evaluation_task(self, topic):
-        ofc_agent = self.agents.ofc_agent()
-        if ofc_agent is None:
-            raise ValueError("OFC agent is not initialized.")
-
+        """Task for OFC agent to evaluate rewards."""
         description = dedent(f"""
             Task: Assess different actions or options based on potential rewards related to '{topic}'.
             Actions Required:
@@ -61,49 +67,52 @@ class PFCTasks:
             Expected Output:
             A detailed assessment of options with a focus on long-term rewards and strategic benefits related to '{topic}'.
         """)
-        return Task(
+        task = Task(
+            name="reward_evaluation_task",
             description=description,
             expected_output="An assessment document ranking options by potential rewards and strategic value.",
-            agent=ofc_agent,
+            agent=self.agents.ofc_agent(),
         )
+        return task
 
     def conflict_resolution_task(self, topic):
-        acc_agent = self.agents.acc_agent()
-        if acc_agent is None:
-            raise ValueError("ACC agent is not initialized.")
-
+        """Task for ACC agent to resolve conflicts."""
         description = dedent(f"""
-            Task: Monitor and resolve conflicts related to '{topic}'.
+            Task: Resolve conflicts between emotional, reward-based, and logical inputs for '{topic}'.
             Actions Required:
-            - Identify sources of conflict and involved parties within the context of '{topic}'.
-            - Analyze the underlying causes of these conflicts, detecting any errors in performance or communication.
-            - Develop and implement conflict resolution strategies to address both cognitive and emotional aspects.
-            - Regulate attention and motivation levels to ensure effective conflict resolution and sustained focus on goals.
+            - Identify sources of conflict within the context of '{topic}'.
+            - Analyze the underlying causes of these conflicts.
+            - Develop and implement conflict resolution strategies.
             Expected Output:
-            A conflict resolution report with actionable steps and outcomes to enhance performance, resolve conflicts, and maintain attention and motivation related to '{topic}'.
+            A conflict resolution report with actionable steps and outcomes for '{topic}'.
         """)
-        return Task(
+        task = Task(
+            name="conflict_resolution_task",
             description=description,
-            expected_output="A report detailing conflict resolution strategies, performance monitoring, and attention/motivation regulation outcomes.",
-            agent=acc_agent,
+            expected_output="A report detailing conflict resolution strategies and outcomes.",
+            agent=self.agents.acc_agent(),
+            dependencies=[
+                "emotional_risk_assessment_task",
+                "reward_evaluation_task",
+            ],  # ACC depends on VMPFC and OFC outputs
         )
+        return task
 
     def social_cognition_task(self, topic):
-        mpfc_agent = self.agents.mpfc_agent()
-        if mpfc_agent is None:
-            raise ValueError("MPFC agent is not initialized.")
-
+        """Task for MPFC agent to enhance social cognition."""
         description = dedent(f"""
             Task: Analyze and enhance social dynamics related to '{topic}'.
             Actions Required:
-            - Assess the current social interactions and their impact on the topic '{topic}'.
-            - Identify areas for improvement in social interactions and self-reflection.
+            - Assess current social interactions and their impact on '{topic}'.
+            - Identify areas for improvement in social interactions.
             - Propose interventions to enhance social cognition and personal growth.
             Expected Output:
-            A strategic plan to improve social interactions and personal dynamics, backed by social psychological insights related to '{topic}'.
+            A strategic plan to improve social interactions related to '{topic}'.
         """)
-        return Task(
+        task = Task(
+            name="social_cognition_task",
             description=description,
-            expected_output="A strategic plan with interventions for enhancing social cognition and personal dynamics.",
-            agent=mpfc_agent,
+            expected_output="A strategic plan with interventions for enhancing social cognition.",
+            agent=self.agents.mpfc_agent(),
         )
+        return task

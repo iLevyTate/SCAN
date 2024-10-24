@@ -1,9 +1,14 @@
 # scan/scan_agents.py
 
 import logging
+import os
 from textwrap import dedent
 from crewai import Agent
 from scan.openai_llm import OpenAIWrapper  # Updated OpenAIWrapper with LangChain
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -22,12 +27,16 @@ class PFCAgents:
         self.api_key = api_key
         self.topic = topic
         self.agent_models = {
-            'DLPFC': 'ft:gpt-4o-mini-2024-07-18:personal:dlpfcv2:A4gAvc9k',
-            'VMPFC': 'ft:gpt-4o-mini-2024-07-18:personal:vmpfcv2:A523M03L',
-            'OFC': 'ft:gpt-4o-mini-2024-07-18:personal:ofcv3datasetnew09092924:A5h8dT2o',
-            'ACC': 'ft:gpt-4o-mini-2024-07-18:personal:accv4:A5hb0Wp0',
-            'MPFC': 'ft:gpt-4o-mini-2024-07-18:personal:mpfcv2:A8xFTDjF'
+            'DLPFC': os.getenv('DLPFC_MODEL'),
+            'VMPFC': os.getenv('VMPFC_MODEL'),
+            'OFC': os.getenv('OFC_MODEL'),
+            'ACC': os.getenv('ACC_MODEL'),
+            'MPFC': os.getenv('MPFC_MODEL')
         }
+        # Verify all models are loaded
+        for role, model in self.agent_models.items():
+            if not model:
+                raise ValueError(f"Environment variable for {role}_MODEL is not set.")
 
     def create_agent(self, role_name):
         """Creates an agent with the specified role."""

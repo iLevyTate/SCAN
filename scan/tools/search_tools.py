@@ -1,42 +1,21 @@
-import json
+# scan/tools/search_tools.py
 import os
-
-import requests
-from langchain.tools import tool
-
+from langchain.tools import Tool
+from langchain.utilities import SerpAPIWrapper
 
 class SearchTools:
-    @tool("Search the internet")
-    def search_internet(query):
-        """Useful to search the internet
-        about a a given topic and return relevant results"""
-        top_result_to_return = 4
-        url = "https://google.serper.dev/search"
-        payload = json.dumps({"q": query})
-        if os.environ["SERPER_API_KEY"] is None:
-            raise ValueError("The SERPER_API_KEY environment variable must be set")
-        
-        headers = {"X-API-KEY": os.environ["SERPER_API_KEY"], "content-type": "application/json"}
-        response = requests.request("POST", url, headers=headers, data=payload)
-        # check if there is an organic key
-        if "organic" not in response.json():
-            return "Sorry, I couldn't find anything about that, there could be an error with your Serper api key."
-        else:
-            results = response.json()["organic"]
-            string = []
-            for result in results[:top_result_to_return]:
-                try:
-                    string.append(
-                        "\n".join(
-                            [
-                                f"Title: {result['title']}",
-                                f"Link: {result['link']}",
-                                f"Snippet: {result['snippet']}",
-                                "\n-----------------",
-                            ]
-                        )
-                    )
-                except KeyError:
-                    pass
+    """Tools for searching the internet."""
 
-            return "\n".join(string)
+    def __init__(self):
+        api_key = os.getenv("SERPER_API_KEY")
+        if not api_key:
+            raise ValueError("The SERPER_API_KEY environment variable must be set")
+        self.search = SerpAPIWrapper(serpapi_api_key=api_key)
+
+    def get_search_tool(self) -> Tool:
+        """Returns a search tool that agents can use."""
+        return Tool(
+            name="Search",
+            func=self.search.run,
+            description="Useful for answering questions about current events or the internet.",
+        )

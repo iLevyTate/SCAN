@@ -1,13 +1,15 @@
 # scan/openai_llm.py
 
-import os
 import logging
+import os
+
 from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.openai_info import OpenAICallbackHandler
 from langchain_community.chat_models import ChatOpenAI
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
 
 class OpenAIWrapper:
     """Wrapper for OpenAI LLM interactions using LangChain."""

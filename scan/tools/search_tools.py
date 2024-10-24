@@ -1,7 +1,9 @@
 # scan/tools/search_tools.py
 import os
+
 from langchain.tools import Tool
 from langchain.utilities import SerpAPIWrapper
+
 
 class SearchTools:
     """Tools for searching the internet."""

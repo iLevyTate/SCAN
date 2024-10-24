@@ -1,15 +1,15 @@
 # scan/main.py
 
-import os
 import logging
+import os
 
+from crewai import Crew, Process
 from dotenv import load_dotenv
 
+from scan.errors import MissingEnvironmentVariableError
 from scan.openai_llm import OpenAIWrapper
 from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
-from scan.errors import MissingEnvironmentVariableError
-from crewai import Crew, Process
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -30,7 +30,7 @@ class CustomCrew:
     def __init__(self, topic: str):
         self.topic = topic
         # Initialize manager LLM
-        self.manager_llm = OpenAIWrapper(api_key=openai_api_key, model_name='gpt-4').llm
+        self.manager_llm = OpenAIWrapper(api_key=openai_api_key, model_name="gpt-4").llm
         # Initialize agents
         logger.info("Initializing agents...")
         self.agents = PFCAgents(api_key=openai_api_key, topic=self.topic)
@@ -80,14 +80,20 @@ class CustomCrew:
     def combine_outputs(self, crew_output: dict) -> str:
         """Combine the outputs from all agents into a final report."""
         # Extract task outputs from the crew output
-        task_results = crew_output.get('tasks', {})
+        task_results = crew_output.get("tasks", {})
 
         # Retrieve outputs for each task
-        decision_output = task_results.get('complex_decision_making_task', {}).get('output', 'No output')
-        emotional_output = task_results.get('emotional_risk_assessment_task', {}).get('output', 'No output')
-        reward_output = task_results.get('reward_evaluation_task', {}).get('output', 'No output')
-        conflict_output = task_results.get('conflict_resolution_task', {}).get('output', 'No output')
-        social_output = task_results.get('social_cognition_task', {}).get('output', 'No output')
+        decision_output = task_results.get("complex_decision_making_task", {}).get(
+            "output", "No output"
+        )
+        emotional_output = task_results.get("emotional_risk_assessment_task", {}).get(
+            "output", "No output"
+        )
+        reward_output = task_results.get("reward_evaluation_task", {}).get("output", "No output")
+        conflict_output = task_results.get("conflict_resolution_task", {}).get(
+            "output", "No output"
+        )
+        social_output = task_results.get("social_cognition_task", {}).get("output", "No output")
 
         # Format the final report
         final_report = f"""

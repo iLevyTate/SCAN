@@ -3,15 +3,18 @@
 import logging
 import os
 from textwrap import dedent
+
 from crewai import Agent
-from scan.openai_llm import OpenAIWrapper  # Updated OpenAIWrapper with LangChain
 from dotenv import load_dotenv
+
+from scan.openai_llm import OpenAIWrapper  # Updated OpenAIWrapper with LangChain
 
 # Load environment variables
 load_dotenv()
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
 
 class PFCAgents:
     """Defines the PFC agents with their respective roles and responsibilities."""
@@ -27,11 +30,11 @@ class PFCAgents:
         self.api_key = api_key
         self.topic = topic
         self.agent_models = {
-            'DLPFC': os.getenv('DLPFC_MODEL'),
-            'VMPFC': os.getenv('VMPFC_MODEL'),
-            'OFC': os.getenv('OFC_MODEL'),
-            'ACC': os.getenv('ACC_MODEL'),
-            'MPFC': os.getenv('MPFC_MODEL')
+            "DLPFC": os.getenv("DLPFC_MODEL"),
+            "VMPFC": os.getenv("VMPFC_MODEL"),
+            "OFC": os.getenv("OFC_MODEL"),
+            "ACC": os.getenv("ACC_MODEL"),
+            "MPFC": os.getenv("MPFC_MODEL"),
         }
         # Verify all models are loaded
         for role, model in self.agent_models.items():
@@ -40,7 +43,7 @@ class PFCAgents:
 
     def create_agent(self, role_name):
         """Creates an agent with the specified role."""
-        model_name = self.agent_models.get(role_name, 'gpt-4')
+        model_name = self.agent_models.get(role_name, "gpt-4")
         logger.info(f"Initializing {role_name} agent with model: {model_name}")
         llm_wrapper = OpenAIWrapper(api_key=self.api_key, model_name=model_name, max_tokens=1000)
         llm = llm_wrapper.llm  # Get the LangChain LLM
@@ -64,34 +67,34 @@ class PFCAgents:
     def get_backstory(self, role_name):
         """Returns the backstory for the given role."""
         backstories = {
-            'DLPFC': "executive functions like planning and decision-making",
-            'VMPFC': "assessing emotional outcomes and risks",
-            'OFC': "balancing rewards against emotional risks",
-            'ACC': "resolving conflicts between emotional, reward-based, and logical inputs",
-            'MPFC': "understanding social dynamics and self-reflection",
+            "DLPFC": "executive functions like planning and decision-making",
+            "VMPFC": "assessing emotional outcomes and risks",
+            "OFC": "balancing rewards against emotional risks",
+            "ACC": "resolving conflicts between emotional, reward-based, and logical inputs",
+            "MPFC": "understanding social dynamics and self-reflection",
         }
         return backstories.get(role_name, "")
 
     def get_goal(self, role_name):
         """Returns the goal for the given role."""
         goals = {
-            'DLPFC': dedent("""
+            "DLPFC": dedent("""
                 Make decisions based on integrated logical, emotional, and social perspectives.
                 Ensure you synthesize information effectively and provide strategic recommendations.
             """),
-            'VMPFC': dedent("""
+            "VMPFC": dedent("""
                 Provide emotional insights to aid in decision-making.
                 Assess emotional factors thoroughly and concisely.
             """),
-            'OFC': dedent("""
+            "OFC": dedent("""
                 Assess actions based on rewards and manage impulses effectively.
                 Provide a concise evaluation of potential rewards and risks.
             """),
-            'ACC': dedent("""
+            "ACC": dedent("""
                 Resolve conflicts in the decision-making process.
                 Analyze conflicts carefully and provide clear resolution strategies.
             """),
-            'MPFC': dedent("""
+            "MPFC": dedent("""
                 Analyze social interactions and provide insights for personal growth.
                 Focus on social cognition aspects relevant to the topic.
             """),
@@ -99,16 +102,16 @@ class PFCAgents:
         return goals.get(role_name, "")
 
     def dlpfc_agent(self) -> Agent:
-        return self.create_agent('DLPFC')
+        return self.create_agent("DLPFC")
 
     def vmpfc_agent(self) -> Agent:
-        return self.create_agent('VMPFC')
+        return self.create_agent("VMPFC")
 
     def ofc_agent(self) -> Agent:
-        return self.create_agent('OFC')
+        return self.create_agent("OFC")
 
     def acc_agent(self) -> Agent:
-        return self.create_agent('ACC')
+        return self.create_agent("ACC")
 
     def mpfc_agent(self) -> Agent:
-        return self.create_agent('MPFC')
+        return self.create_agent("MPFC")

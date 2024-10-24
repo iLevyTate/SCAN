@@ -20,6 +20,7 @@ chromadb = "^0.5.15"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.4.4"
+pre-commit = "^4.0.1"
 
 [tool.poetry.scripts]
 run-scan = "scan.main:main"

@@ -1,7 +1,9 @@
 # scan/scan_tasks.py
 
 from textwrap import dedent
+
 from crewai import Task
+
 
 class PFCTasks:
     """Defines the tasks assigned to each PFC agent."""
@@ -27,7 +29,11 @@ class PFCTasks:
             description=description,
             expected_output="A comprehensive analytical report with strategic recommendations.",
             agent=self.agents.dlpfc_agent(),
-            dependencies=["emotional_risk_assessment_task", "reward_evaluation_task", "social_cognition_task"],  # Task dependencies
+            dependencies=[
+                "emotional_risk_assessment_task",
+                "reward_evaluation_task",
+                "social_cognition_task",
+            ],  # Task dependencies
         )
         return task
 
@@ -85,7 +91,10 @@ class PFCTasks:
             description=description,
             expected_output="A report detailing conflict resolution strategies and outcomes.",
             agent=self.agents.acc_agent(),
-            dependencies=["emotional_risk_assessment_task", "reward_evaluation_task"],  # ACC depends on VMPFC and OFC outputs
+            dependencies=[
+                "emotional_risk_assessment_task",
+                "reward_evaluation_task",
+            ],  # ACC depends on VMPFC and OFC outputs
         )
         return task
 

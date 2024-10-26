@@ -12,7 +12,10 @@ from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.DEBUG,  # Set to DEBUG to capture all logs
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
@@ -21,7 +24,10 @@ load_dotenv()
 # Get the OpenAI API key from environment variables
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
+    logger.error("OpenAI API Key is missing.")
     raise MissingEnvironmentVariableError("OPENAI_API_KEY")
+else:
+    logger.info("OpenAI API Key Loaded Successfully.")
 
 
 class CustomCrew:
@@ -37,6 +43,43 @@ class CustomCrew:
         # Initialize tasks
         logger.info("Initializing tasks...")
         self.tasks = PFCTasks(agents=self.agents)
+
+    def get_task_outputs(self, crew):
+        """Retrieve and process outputs from each task in the crew."""
+        task_outputs = {}
+        for task_output in crew.output.tasks_output:
+            task_name = task_output.task.name
+            output = task_output.output
+            task_outputs[task_name] = output
+        return task_outputs
+
+    def combine_outputs(self, task_outputs):
+        """Combine outputs from all tasks into a final report."""
+        decision_output = task_outputs.get("complex_decision_making_task", "")
+        emotional_output = task_outputs.get("emotional_risk_assessment_task", "")
+        reward_output = task_outputs.get("reward_evaluation_task", "")
+        conflict_output = task_outputs.get("conflict_resolution_task", "")
+        social_output = task_outputs.get("social_cognition_task", "")
+
+        final_report = f"""
+## SCAN AI Final Report on: {self.topic}
+
+1. Decision-making analysis (DLPFC):
+{decision_output}
+
+2. Emotional analysis (VMPFC):
+{emotional_output}
+
+3. Reward evaluation (OFC):
+{reward_output}
+
+4. Conflict resolution (ACC):
+{conflict_output}
+
+5. Social insights (MPFC):
+{social_output}
+"""
+        return final_report
 
     def run(self) -> str:
         """Run the crew to execute all tasks and generate the final output."""
@@ -63,57 +106,19 @@ class CustomCrew:
                 conflict_task,
                 social_task,
             ],
-            manager_llm=self.manager_llm,  # Use manager LLM
+            manager_llm=self.manager_llm,
             process=Process.hierarchical,
             memory=True,
         )
 
         logger.info("Starting crew execution...")
-        # Kick off the crew and get the structured output
-        crew_output = crew.kickoff()
+        # Kick off the crew execution
+        crew.kickoff()
         logger.info("Crew execution completed.")
-
-        # Combine results
-        final_output = self.combine_outputs(crew_output)
-        return final_output
-
-    def combine_outputs(self, crew_output: dict) -> str:
-        """Combine the outputs from all agents into a final report."""
-        # Extract task outputs from the crew output
-        task_results = crew_output.get("tasks", {})
-
-        # Retrieve outputs for each task
-        decision_output = task_results.get("complex_decision_making_task", {}).get(
-            "output", "No output"
-        )
-        emotional_output = task_results.get("emotional_risk_assessment_task", {}).get(
-            "output", "No output"
-        )
-        reward_output = task_results.get("reward_evaluation_task", {}).get("output", "No output")
-        conflict_output = task_results.get("conflict_resolution_task", {}).get(
-            "output", "No output"
-        )
-        social_output = task_results.get("social_cognition_task", {}).get("output", "No output")
-
-        # Format the final report
-        final_report = f"""
-Final analysis on '{self.topic}':
-
-1. Decision-making report (DLPFC):
-{decision_output}
-
-2. Emotional analysis (VMPFC):
-{emotional_output}
-
-3. Reward evaluation (OFC):
-{reward_output}
-
-4. Conflict resolution (ACC):
-{conflict_output}
-
-5. Social insights (MPFC):
-{social_output}
-"""
+        # Get task outputs
+        task_outputs = self.get_task_outputs(crew)
+        # Combine outputs into final report
+        final_report = self.combine_outputs(task_outputs)
         return final_report
 
 
@@ -133,6 +138,9 @@ def main() -> int:
     except MissingEnvironmentVariableError as e:
         logger.error(e.message)
         print(e.message)
+    except KeyboardInterrupt:
+        logger.info("Execution interrupted by user.")
+        print("Execution interrupted by user.")
     except Exception as e:
         logger.exception("An unexpected error occurred: %s", e)
         print(f"An unexpected error occurred: {e}")

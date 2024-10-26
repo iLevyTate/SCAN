@@ -27,13 +27,13 @@ class OpenAIWrapper:
 
         try:
             self.llm = ChatOpenAI(
-                model=self.model_name,
+                model_name=self.model_name,
                 temperature=0,
                 max_tokens=self.max_tokens,
-                max_retries=3,
                 callback_manager=self.callback_manager,
                 verbose=True,
             )
+            logger.info(f"LLM initialized successfully with model: {self.model_name}")
         except Exception as e:
             logger.error(f"Failed to initialize LLM with model {self.model_name}: {e}")
             raise

@@ -1,15 +1,13 @@
 # scan/openai_llm.py
 
-import logging
 import os
+import logging
 
+from langchain_openai import ChatOpenAI  # Updated import
 from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.openai_info import OpenAICallbackHandler
-from langchain_community.chat_models import ChatOpenAI
 
-# Configure logging
 logger = logging.getLogger(__name__)
-
 
 class OpenAIWrapper:
     """Wrapper for OpenAI LLM interactions using LangChain."""
@@ -19,26 +17,27 @@ class OpenAIWrapper:
         os.environ["OPENAI_API_KEY"] = self.api_key
         self.model_name = model_name
         self.max_tokens = max_tokens
-        logger.info(f"Initializing LLM with model: {self.model_name}")
-
-        # Set up callback manager for token usage tracking
         self.callback_handler = OpenAICallbackHandler()
         self.callback_manager = CallbackManager([self.callback_handler])
+        self.llm = self.initialize_llm()
 
+    def initialize_llm(self):
+        """Initialize the LangChain OpenAI LLM."""
         try:
-            self.llm = ChatOpenAI(
+            llm = ChatOpenAI(
                 model_name=self.model_name,
                 temperature=0,
                 max_tokens=self.max_tokens,
                 callback_manager=self.callback_manager,
-                verbose=True,
+                verbose=False,
             )
             logger.info(f"LLM initialized successfully with model: {self.model_name}")
+            return llm
         except Exception as e:
             logger.error(f"Failed to initialize LLM with model {self.model_name}: {e}")
             raise
 
-    def get_token_usage(self):
+    def get_token_usage(self) -> dict:
         """Retrieve the token usage from the callback handler."""
         return {
             "total_tokens": self.callback_handler.total_tokens,

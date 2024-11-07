@@ -1,5 +1,7 @@
 # SCAN
 
+[![DOI](https://zenodo.org/badge/802333022.svg)](https://doi.org/10.5281/zenodo.14052884)
+
 ![SCANGITHUBLOGO](https://github.com/user-attachments/assets/eca90256-2974-44e3-b7b3-e44798d2b482)
 
 The SCAN (Synthetic Cognitive Augmentation Network) project aims to develop a collaborative multi-agent system that replicates the functions of the prefrontal cortex (PFC) using AI agents to enhance problem-solving, planning, decision-making, and other PFC-related activities.

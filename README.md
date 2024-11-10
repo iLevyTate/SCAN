@@ -21,7 +21,7 @@ The SCAN (Synthetic Cognitive Augmentation Network) project aims to develop a co
 - [Contributors](#contributors)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
-- [Poetry Instructions](#poetry-instructions)
+- [uv Instructions](#uv-instruction)
 
 ## Overview
 
@@ -67,7 +67,7 @@ cd SCAN
 ### Install the Required Packages
 
 ```bash
-poetry install
+uv sync --frozen
 ```
 
 ### Set up Environment Variables
@@ -85,7 +85,7 @@ export OPENAI_API_KEY=your_openai_api_key_here
 ### Run the Main Script
 
 ```bash
-poetry run run-scan
+uv run run-scan
 ```
 
 ## Contributors
@@ -103,10 +103,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **OpenAI**: For the language processing capabilities.
 - **Contributors**: Thanks to all contributors who have helped in building and improving the SCAN project.
 
-## Poetry Instructions
+## uv Instructions
 
-For the Poetry package manager:
+For the uv package manager:
 
-- **Installation**: Install Poetry via the official instructions at [https://python-poetry.org/docs/#installation](https://python-poetry.org/docs/#installation).
-- **Add Dependencies**: Use `poetry add <package-name>` to add dependencies.
-- **Run Scripts**: Use `poetry run <command>` to run scripts defined in `pyproject.toml`.
+- **Installation**: Install uv via the official instructions at [https://docs.astral.sh/uv/getting-started/installation/](https://docs.astral.sh/uv/getting-started/installation/).
+- **Add Dependencies**: Use `uv add <package-name>` to add dependencies.
+- **Run Scripts**: Use `uv run <command>` to run scripts defined in `pyproject.toml`.

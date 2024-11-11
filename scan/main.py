@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 from crewai import Crew, Process
 
 from scan.config import settings
+from scan.console import console
 from scan.errors import MissingEnvironmentVariableError
 from scan.openai_llm import OpenAIWrapper
 from scan.scan_agents import PFCAgents
@@ -60,14 +61,14 @@ class CustomCrew:
             task_outputs = self.get_task_outputs(crew_output)
             # Combine outputs into final report
             final_report = self.combine_outputs(task_outputs)
-            print("\n\n########################")
-            print("## SCAN AI Operation Result:")
-            print("########################\n")
-            print(final_report)
+            console.print("\n\n########################")
+            console.print("## SCAN AI Operation Result:")
+            console.print("########################\n")
+            console.print(final_report)
 
         except Exception as e:
             logger.exception("An error occurred during crew execution")
-            print(f"An error occurred during crew execution: {e}")
+            console.print(f"An error occurred during crew execution: {e}")
 
     def get_task_outputs(self, crew_output: CrewOutput) -> dict[str, Any]:
         """Retrieve and process outputs from each task in the crew."""
@@ -101,23 +102,24 @@ class CustomCrew:
 
 def main() -> None:
     """Main entry point for the SCAN system."""
-    print("## Welcome to the SCAN System")
-    print("---------------------------------------------------------------")
+    console.print("## Welcome to the SCAN System")
+    console.print("---------------------------------------------------------------")
     try:
         topic = input("Please enter the topic you need help with: ")
-        print(f"You entered: {topic}")
+        console.print(f"You entered: {topic}")
         custom_crew = CustomCrew(topic=topic)
-        custom_crew.run()
+        with console.status("Thinking..."):
+            custom_crew.run()
     except MissingEnvironmentVariableError as e:
         logger.error(e)
-        print(e)
+        console.print(e)
     except KeyboardInterrupt:
         logger.info("Execution interrupted by user.")
-        print("Execution interrupted by user.")
+        console.print("Execution interrupted by user.")
     except Exception as e:
         logger.exception("An unexpected error occurred")
-        print(f"An unexpected error occurred: {e}")
-    print("Thank you for using the SCAN System. Have a great day!")
+        console.print(f"An unexpected error occurred: {e}")
+    console.print("Thank you for using the SCAN System. Have a great day!")
 
 
 if __name__ == "__main__":

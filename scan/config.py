@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+import logging
+from typing import Literal
+
+from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,6 +16,24 @@ class Settings(BaseSettings):
     OFC_MODEL: str = "gpt-4"
     ACC_MODEL: str = "gpt-4"
     MPFC_MODEL: str = "gpt-4"
+    LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "WARNING"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def COMPUTED_LOG_LEVEL(
+        self,
+    ) -> int:
+        if self.LOG_LEVEL == "DEBUG":
+            return logging.DEBUG
+        if self.LOG_LEVEL == "INFO":
+            return logging.INFO
+        if self.LOG_LEVEL == "WARNING":
+            return logging.WARNING
+        if self.LOG_LEVEL == "WARNING":
+            return logging.WARNING
+        if self.LOG_LEVEL == "ERROR":
+            return logging.ERROR
+        return logging.CRITICAL
 
 
 settings = Settings()  # type: ignore

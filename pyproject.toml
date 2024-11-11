@@ -19,7 +19,9 @@ dependencies = [
   "langchain-openai==0.2.6",
   "mypy[faster-cache]==1.13.0",
   "openai==1.54.3",
+  "pydantic==2.9.2",
   "pydantic-settings==2.6.1",
+  "rich==13.9.4",
   "tenacity==9.0.0",
   "tiktoken==0.7.0",
 ]
@@ -58,6 +60,8 @@ select = [
   "F",  # pyflakes
   "UP",  # pyupgrade
   "I001",  # unsorted-imports
+  "T201",  # print found
+  "T203",  # pprint found
 ]
 ignore = [
   "E501",

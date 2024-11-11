@@ -1,10 +1,8 @@
 import os
 
-from dotenv import load_dotenv
 from openai import OpenAI
 
-# Load environment variables
-load_dotenv()
+from scan.console import console
 
 # Set your OpenAI API key
 api_key = os.getenv("OPENAI_API_KEY")
@@ -22,8 +20,8 @@ try:
     response = client.chat.completions.create(
         model=model_name, messages=[{"role": "user", "content": "This is a test."}], max_tokens=5
     )
-    print("OpenAI API call successful.")
+    console.print("OpenAI API call successful.")
     if response.choices and response.choices[0].message.content:
-        print(response.choices[0].message.content.strip())
+        console.print(response.choices[0].message.content.strip())
 except Exception as e:
-    print(f"OpenAI API call failed: {e}")
+    console.print(f"OpenAI API call failed: {e}")

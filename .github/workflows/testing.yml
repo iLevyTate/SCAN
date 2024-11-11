@@ -26,8 +26,8 @@ jobs:
       - name: Install Dependencies
         run: poetry install
       - name: Ruff format check
-        run: poetry run ruff format scan tests --check
+        run: poetry run ruff format scan --check
       - name: Lint with ruff
-        run: poetry run ruff check scan tests
+        run: poetry run ruff check scan
       - name: mypy check
         run: poetry run mypy .

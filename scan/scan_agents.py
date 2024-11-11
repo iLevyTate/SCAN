@@ -1,11 +1,11 @@
 # scan/scan_agents.py
 
 import logging
-import os
 from textwrap import dedent
 
 from crewai import Agent
 
+from scan.config import settings
 from scan.openai_llm import OpenAIWrapper
 
 logger = logging.getLogger(__name__)
@@ -18,11 +18,11 @@ class PFCAgents:
         self.api_key = api_key
         self.topic = topic
         self.agent_models = {
-            "DLPFC": os.getenv("DLPFC_MODEL", "gpt-4"),
-            "VMPFC": os.getenv("VMPFC_MODEL", "gpt-4"),
-            "OFC": os.getenv("OFC_MODEL", "gpt-4"),
-            "ACC": os.getenv("ACC_MODEL", "gpt-4"),
-            "MPFC": os.getenv("MPFC_MODEL", "gpt-4"),
+            "DLPFC": settings.DLPFC_MODEL,
+            "VMPFC": settings.VMPFC_MODEL,
+            "OFC": settings.OFC_MODEL,
+            "ACC": settings.ACC_MODEL,
+            "MPFC": settings.MPFC_MODEL,
         }
         self.agents: dict[str, Agent] = {}
         self.initialize_agents()

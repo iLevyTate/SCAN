@@ -4,7 +4,7 @@ import logging
 import os
 
 from langchain.callbacks.manager import CallbackManager
-from langchain.callbacks.openai_info import OpenAICallbackHandler
+from langchain_community.callbacks.openai_info import OpenAICallbackHandler
 from langchain_openai import ChatOpenAI  # Updated import
 
 logger = logging.getLogger(__name__)

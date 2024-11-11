@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from crewai import Crew, Process
 from dotenv import load_dotenv
@@ -11,6 +11,9 @@ from scan.errors import MissingEnvironmentVariableError
 from scan.openai_llm import OpenAIWrapper
 from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
+
+if TYPE_CHECKING:
+    from crewai.crews.crew_output import CrewOutput
 
 # Configure logging
 logging.basicConfig(
@@ -46,10 +49,10 @@ class CustomCrew:
             # Initialize tasks
             tasks = [
                 self.tasks.complex_decision_making_task(self.topic),
-                self.tasks.emotional_risk_assessment_task(self.topic),
-                self.tasks.reward_evaluation_task(self.topic),
-                self.tasks.conflict_resolution_task(self.topic),
-                self.tasks.social_cognition_task(self.topic),
+                # self.tasks.emotional_risk_assessment_task(self.topic),
+                # self.tasks.reward_evaluation_task(self.topic),
+                # self.tasks.conflict_resolution_task(self.topic),
+                # self.tasks.social_cognition_task(self.topic),
             ]
 
             # Create the crew
@@ -62,11 +65,11 @@ class CustomCrew:
             )
 
             logger.info("Starting crew execution...")
-            crew.kickoff()
+            crew_output = crew.kickoff()
             logger.info("Crew execution completed.")
 
             # Get task outputs
-            task_outputs = self.get_task_outputs(crew)
+            task_outputs = self.get_task_outputs(crew_output)
             # Combine outputs into final report
             final_report = self.combine_outputs(task_outputs)
             print("\n\n########################")
@@ -78,12 +81,12 @@ class CustomCrew:
             logger.exception("An error occurred during crew execution")
             print(f"An error occurred during crew execution: {e}")
 
-    def get_task_outputs(self, crew: Crew) -> dict[str, Any]:
+    def get_task_outputs(self, crew_output: CrewOutput) -> dict[str, Any]:
         """Retrieve and process outputs from each task in the crew."""
         task_outputs = {}
-        for task_result in crew.results:
-            task_name = task_result["task"].name
-            output = task_result.get("output")
+        for task_result in crew_output.tasks_output:
+            task_name = task_result.name
+            output = task_result.raw
             if output:
                 task_outputs[task_name] = output
             else:

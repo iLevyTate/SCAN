@@ -1,18 +1,20 @@
 # scan/scan_agents.py
 
-import os
 import logging
+import os
 from textwrap import dedent
 
 from crewai import Agent
+
 from scan.openai_llm import OpenAIWrapper
 
 logger = logging.getLogger(__name__)
 
+
 class PFCAgents:
     """Defines the PFC agents with their respective roles and responsibilities."""
 
-    def __init__(self, api_key: str, topic: str):
+    def __init__(self, api_key: str, topic: str) -> None:
         self.api_key = api_key
         self.topic = topic
         self.agent_models = {
@@ -22,7 +24,7 @@ class PFCAgents:
             "ACC": os.getenv("ACC_MODEL", "gpt-4"),
             "MPFC": os.getenv("MPFC_MODEL", "gpt-4"),
         }
-        self.agents = {}
+        self.agents: dict[str, Agent] = {}
         self.initialize_agents()
 
     def initialize_agents(self) -> None:
@@ -92,6 +94,6 @@ class PFCAgents:
         }
         return goals.get(role_name, "")
 
-    def get_all_agents(self) -> list:
+    def get_all_agents(self) -> list[Agent]:
         """Returns a list of all initialized agents."""
         return list(self.agents.values())

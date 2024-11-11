@@ -1,14 +1,12 @@
 # scan/scan_agents.py
 
-import logging
 from textwrap import dedent
 
 from crewai import Agent
 
 from scan.config import settings
 from scan.openai_llm import OpenAIWrapper
-
-logger = logging.getLogger(__name__)
+from scan.project_logger import logger
 
 
 class PFCAgents:

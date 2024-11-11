@@ -4,7 +4,7 @@ import os
 
 from dotenv import load_dotenv
 
-from scan.logging import logger
+from scan.project_logger import logger
 
 # Load environment variables from .env file
 load_dotenv()

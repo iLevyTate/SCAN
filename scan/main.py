@@ -7,8 +7,8 @@ from crewai import Crew, Process
 from scan.config import settings
 from scan.console import console
 from scan.errors import MissingEnvironmentVariableError
-from scan.logging import logger
 from scan.openai_llm import OpenAIWrapper
+from scan.project_logger import logger
 from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
 

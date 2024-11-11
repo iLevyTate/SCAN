@@ -1,35 +1,37 @@
-[tool.poetry]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
 name = "scan"
 version = "0.1.0"
+requires-python = ">=3.10,<3.13"
 description = "This project aims to develop a sophisticated multi-agent system that replicates the functions of the prefrontal cortex (PFC) using AI agents."
-authors = ["John Doe <john.doe@example.com>"]
+authors = [ { name = "Ben Kennedy", email = "benjaminjoelkennedy@gmail.com" } ]
 license = "MIT"
+dependencies = [
+  "chromadb==0.5.18",
+  "crewai==0.76.9",
+  "duckduckgo-search==6.3.4",
+  "langchain==0.3.7",
+  "langchain-community==0.3.4",
+  "langchain-google-genai==2.0.4",
+  "langchain-openai==0.2.6",
+  "mypy[faster-cache]==1.13.0",
+  "openai==1.54.3",
+  "python-dotenv==1.0.1",
+  "tenacity==9.0.0",
+  "tiktoken==0.7.0",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.10, <=3.13"
-crewai = "0.30.11"
-duckduckgo-search = "^6.1.0"
-langchain-google-genai = "^1.0.4"
-python-dotenv = "^1.0.1"
-tenacity = "^8.3.0"
-tiktoken = ">=0.5.2,<0.6.0"
-langchain-community = "0.0.25"
-langchain = ">=0.1.10, <0.2.0"  # Updated version range for compatibility
-langchain-openai = "^0.0.5"
-chromadb = "^0.5.15"
-openai = "^1.52.2"
+[dependency-groups]
+dev = [
+  "pre-commit==4.0.1",
+  "ruff==0.7.3",
+]
 
-[tool.poetry.group.dev.dependencies]
-ruff = "0.4.4"
-pre-commit = "^4.0.1"
-mypy = {version = "^1.13.0", extras = ["faster-cache"]}
-
-[tool.poetry.scripts]
+[project.scripts]
 run-scan = "scan.main:main"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
 
 [tool.mypy]
 check_untyped_defs = true

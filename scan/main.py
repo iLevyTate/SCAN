@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import logging
-import os
 from typing import TYPE_CHECKING, Any
 
 from crewai import Crew, Process
-from dotenv import load_dotenv
 
+from scan.config import settings
 from scan.errors import MissingEnvironmentVariableError
 from scan.openai_llm import OpenAIWrapper
 from scan.scan_agents import PFCAgents
@@ -23,24 +22,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def load_api_key() -> str:
-    """Load the OpenAI API key from environment variables."""
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        logger.error("OPENAI_API_KEY environment variable is missing.")
-        raise MissingEnvironmentVariableError("OPENAI_API_KEY")
-    logger.info("OpenAI API Key Loaded Successfully.")
-    return api_key
-
-
 class CustomCrew:
     """Manages PFC agents and tasks for the SCAN system."""
 
-    def __init__(self, topic: str, api_key: str) -> None:
+    def __init__(self, topic: str) -> None:
         self.topic = topic
-        self.api_key = api_key
-        self.manager_llm = OpenAIWrapper(api_key=self.api_key, model_name="gpt-4").llm
-        self.agents = PFCAgents(api_key=self.api_key, topic=self.topic)
+        self.manager_llm = OpenAIWrapper(api_key=settings.OPENAI_API_KEY, model_name="gpt-4").llm
+        self.agents = PFCAgents(api_key=settings.OPENAI_API_KEY, topic=self.topic)
         self.tasks = PFCTasks(agents=self.agents)
 
     def run(self) -> None:
@@ -49,10 +37,10 @@ class CustomCrew:
             # Initialize tasks
             tasks = [
                 self.tasks.complex_decision_making_task(self.topic),
-                # self.tasks.emotional_risk_assessment_task(self.topic),
-                # self.tasks.reward_evaluation_task(self.topic),
-                # self.tasks.conflict_resolution_task(self.topic),
-                # self.tasks.social_cognition_task(self.topic),
+                self.tasks.emotional_risk_assessment_task(self.topic),
+                self.tasks.reward_evaluation_task(self.topic),
+                self.tasks.conflict_resolution_task(self.topic),
+                self.tasks.social_cognition_task(self.topic),
             ]
 
             # Create the crew
@@ -113,14 +101,12 @@ class CustomCrew:
 
 def main() -> None:
     """Main entry point for the SCAN system."""
-    load_dotenv()
-    api_key = load_api_key()
     print("## Welcome to the SCAN System")
     print("---------------------------------------------------------------")
     try:
         topic = input("Please enter the topic you need help with: ")
         print(f"You entered: {topic}")
-        custom_crew = CustomCrew(topic=topic, api_key=api_key)
+        custom_crew = CustomCrew(topic=topic)
         custom_crew.run()
     except MissingEnvironmentVariableError as e:
         logger.error(e)

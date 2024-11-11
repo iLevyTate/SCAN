@@ -1,13 +1,10 @@
 # test_env_variables.py
 
-import logging
 import os
 
 from dotenv import load_dotenv
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from scan.logging import logger
 
 # Load environment variables from .env file
 load_dotenv()

@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     OFC_MODEL: str = "gpt-4"
     ACC_MODEL: str = "gpt-4"
     MPFC_MODEL: str = "gpt-4"
+    # Default logging to warning because crewai has a logger that is extrememly noisy and I haven't
+    # found a way to turn it off.
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "WARNING"
 
     @computed_field  # type: ignore[prop-decorator]

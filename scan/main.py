@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING, Any
 
 from crewai import Crew, Process
@@ -8,19 +7,13 @@ from crewai import Crew, Process
 from scan.config import settings
 from scan.console import console
 from scan.errors import MissingEnvironmentVariableError
+from scan.logging import logger
 from scan.openai_llm import OpenAIWrapper
 from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
 
 if TYPE_CHECKING:
     from crewai.crews.crew_output import CrewOutput
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,  # Set to INFO for general usage
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-logger = logging.getLogger(__name__)
 
 
 class CustomCrew:

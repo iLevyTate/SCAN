@@ -22,6 +22,7 @@ openai = "^1.52.2"
 [tool.poetry.group.dev.dependencies]
 ruff = "0.4.4"
 pre-commit = "^4.0.1"
+mypy = {version = "^1.13.0", extras = ["faster-cache"]}
 
 [tool.poetry.scripts]
 run-scan = "scan.main:main"
@@ -30,13 +31,32 @@ run-scan = "scan.main:main"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.mypy]
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = ["crewai.*"]
+ignore_missing_imports = true
+
 [tool.ruff]
 line-length = 100
 target-version = "py310"
 fix = true
 
 [tool.ruff.lint]
-select = ["E", "B", "F", "UP", "I001"]
+select = [
+  "E",  # pycodestyle
+  "B",  # flake8-bugbear
+  "W",  # Warning
+  "F",  # pyflakes
+  "UP",  # pyupgrade
+  "I001",  # unsorted-imports
+]
 ignore = [
   "E501",
   "W191",

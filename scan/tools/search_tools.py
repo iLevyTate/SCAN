@@ -8,7 +8,7 @@ from langchain.utilities import SerpAPIWrapper
 class SearchTools:
     """Tools for searching the internet."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         api_key = os.getenv("SERPER_API_KEY")
         if not api_key:
             raise ValueError("The SERPER_API_KEY environment variable must be set")

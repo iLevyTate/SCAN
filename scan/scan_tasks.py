@@ -1,14 +1,18 @@
-# scan/scan_tasks.py
+from __future__ import annotations
 
 from textwrap import dedent
+from typing import TYPE_CHECKING
+
 from crewai import Task
+
+if TYPE_CHECKING:
+    from scan.scan_agents import PFCAgents
+
 
 class PFCTasks:
     """Defines the tasks assigned to each PFC agent."""
 
-    def __init__(self, agents):
-        if not agents:
-            raise ValueError("Agents must be initialized.")
+    def __init__(self, agents: PFCAgents) -> None:
         self.agents = agents
 
     def complex_decision_making_task(self, topic: str) -> Task:

@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any
 
 from crewai import Crew, Process
 
-from scan.config import settings
 from scan.console import console
 from scan.errors import MissingEnvironmentVariableError
 from scan.openai_llm import OpenAIWrapper
@@ -21,8 +20,8 @@ class CustomCrew:
 
     def __init__(self, topic: str) -> None:
         self.topic = topic
-        self.manager_llm = OpenAIWrapper(api_key=settings.OPENAI_API_KEY, model_name="gpt-4").llm
-        self.agents = PFCAgents(api_key=settings.OPENAI_API_KEY, topic=self.topic)
+        self.manager_llm = OpenAIWrapper(model_name="gpt-4").llm
+        self.agents = PFCAgents(topic=self.topic)
         self.tasks = PFCTasks(agents=self.agents)
 
     def run(self) -> None:

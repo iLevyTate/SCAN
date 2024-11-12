@@ -12,8 +12,7 @@ from scan.project_logger import logger
 class PFCAgents:
     """Defines the PFC agents with their respective roles and responsibilities."""
 
-    def __init__(self, api_key: str, topic: str) -> None:
-        self.api_key = api_key
+    def __init__(self, topic: str) -> None:
         self.topic = topic
         self.agent_models = {
             "DLPFC": settings.DLPFC_MODEL,
@@ -35,7 +34,7 @@ class PFCAgents:
     def create_agent(self, role_name: str) -> Agent:
         """Creates an agent with the specified role."""
         model_name = self.agent_models[role_name]
-        llm_wrapper = OpenAIWrapper(api_key=self.api_key, model_name=model_name)
+        llm_wrapper = OpenAIWrapper(model_name=model_name)
         llm = llm_wrapper.llm
 
         backstory = dedent(f"""

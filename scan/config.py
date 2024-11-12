@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     OPENAI_API_KEY: str
+    SERPER_API_KEY: str | None = None
     DLPFC_MODEL: str = "gpt-4"
     VMPFC_MODEL: str = "gpt-4"
     OFC_MODEL: str = "gpt-4"

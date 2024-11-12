@@ -1,12 +1,15 @@
 # scan/scan_agents.py
 
 from textwrap import dedent
+from typing import Literal, TypeAlias, cast
 
 from crewai import Agent
 
 from scan.config import settings
 from scan.openai_llm import OpenAIWrapper
 from scan.project_logger import logger
+
+RoleName: TypeAlias = Literal["DLPFC", "VMPFC", "OFC", "ACC", "MPFC"]
 
 
 class PFCAgents:
@@ -27,11 +30,11 @@ class PFCAgents:
     def initialize_agents(self) -> None:
         """Initialize all PFC agents."""
         for role_name in self.agent_models.keys():
-            agent = self.create_agent(role_name)
+            agent = self.create_agent(cast(RoleName, role_name))
             self.agents[role_name] = agent
             logger.info(f"{role_name} agent initialized with model: {self.agent_models[role_name]}")
 
-    def create_agent(self, role_name: str) -> Agent:
+    def create_agent(self, role_name: RoleName) -> Agent:
         """Creates an agent with the specified role."""
         model_name = self.agent_models[role_name]
         llm_wrapper = OpenAIWrapper(model_name=model_name)
@@ -42,7 +45,7 @@ class PFCAgents:
             Please ensure you follow the task instructions precisely and provide concise responses.
         """).strip()
 
-        goal = self.get_goal(role_name).strip()
+        goal = self.get_goal(role_name)
 
         return Agent(
             role=role_name,
@@ -54,42 +57,46 @@ class PFCAgents:
             tools=[],
         )
 
-    def get_backstory(self, role_name: str) -> str:
+    def get_backstory(self, role_name: RoleName) -> str:
         """Returns the backstory for the given role."""
-        backstories = {
-            "DLPFC": "executive functions like planning and decision-making",
-            "VMPFC": "assessing emotional outcomes and risks",
-            "OFC": "balancing rewards against emotional risks",
-            "ACC": "resolving conflicts between emotional, reward-based, and logical inputs",
-            "MPFC": "understanding social dynamics and self-reflection",
-        }
-        return backstories.get(role_name, "")
+        if role_name == "DLPFC":
+            return "executive functions like planning and decision-making"
+        elif role_name == "VMPFC":
+            return "assessing emotional outcomes and risks"
+        elif role_name == "OFC":
+            return "balancing rewards against emotional risks"
+        elif role_name == "ACC":
+            return "resolving conflicts between emotional, reward-based, and logical inputs"
+        else:
+            return "understanding social dynamics and self-reflection"
 
-    def get_goal(self, role_name: str) -> str:
+    def get_goal(self, role_name: RoleName) -> str:
         """Returns the goal for the given role."""
-        goals = {
-            "DLPFC": dedent("""
+        if role_name == "DLPFC":
+            return dedent("""
                 Make decisions based on integrated logical, emotional, and social perspectives.
                 Ensure you synthesize information effectively and provide strategic recommendations.
-            """),
-            "VMPFC": dedent("""
+            """)
+        elif role_name == "VMPFC":
+            return dedent("""
                 Provide emotional insights to aid in decision-making.
                 Assess emotional factors thoroughly and concisely.
-            """),
-            "OFC": dedent("""
+            """)
+        elif role_name == "OFC":
+            return dedent("""
                 Assess actions based on rewards and manage impulses effectively.
                 Provide a concise evaluation of potential rewards and risks.
-            """),
-            "ACC": dedent("""
+            """)
+        elif role_name == "ACC":
+            return dedent("""
                 Resolve conflicts in the decision-making process.
                 Analyze conflicts carefully and provide clear resolution strategies.
-            """),
-            "MPFC": dedent("""
+            """)
+        else:
+            return dedent("""
                 Analyze social interactions and provide insights for personal growth.
                 Focus on social cognition aspects relevant to the topic.
-            """),
-        }
-        return goals.get(role_name, "")
+            """)
 
     def get_all_agents(self) -> list[Agent]:
         """Returns a list of all initialized agents."""

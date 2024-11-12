@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from crewai import Task
 
 if TYPE_CHECKING:
-    from scan.scan_agents import PFCAgents
+    from scan.scan_agents import PFCAgents  # pragma: no cover
 
 
 class PFCTasks:

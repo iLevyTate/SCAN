@@ -30,6 +30,7 @@ dependencies = [
 dev = [
   "pre-commit==4.0.1",
   "pytest==8.3.3",
+  "pytest-cov==6.0.0",
   "ruff==0.7.3",
 ]
 
@@ -47,6 +48,10 @@ disallow_untyped_defs = false
 [[tool.mypy.overrides]]
 module = ["crewai.*"]
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--cov=scan --cov-report term-missing --no-cov-on-fail"
 
 [tool.ruff]
 line-length = 100

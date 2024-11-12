@@ -2,15 +2,11 @@ import os
 
 from openai import OpenAI
 
+from scan.config import settings
 from scan.console import console
 
-# Set your OpenAI API key
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
-    raise ValueError("OPENAI_API_KEY environment variable is not set.")
-
 # Initialize the OpenAI client with the API key
-client = OpenAI(api_key=api_key)
+client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 # Get model name
 model_name = os.getenv("TEST_MODEL", "gpt-3.5-turbo")

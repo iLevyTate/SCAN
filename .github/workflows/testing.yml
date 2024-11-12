@@ -48,4 +48,4 @@ jobs:
       - name: Install Dependencies
         run: uv sync --frozen
       - name: Run tests
-        run: uv run pytest tests
+        run: uv run pytest

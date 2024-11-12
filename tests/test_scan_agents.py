@@ -14,7 +14,7 @@ def test_create_agent():
     assert result.role == "DLPFC"
     assert (
         result.backstory
-        == "You are the DLPFC, focusing on executive functions like planning and decision-making for the topic Some topic.\nPlease ensure you follow the task instructions precisely and provide concise responses."
+        == "You are the DLPFC, focusing on executive functions like planning and decision-making for the topic 'Some topic'.\nPlease ensure you follow the task instructions precisely and provide concise responses."
     )
     assert (
         result.goal

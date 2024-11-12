@@ -1,6 +1,4 @@
-# scan/__main__.py
+from scan.main import main  # pragma: no cover
 
-from scan.main import main
-
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

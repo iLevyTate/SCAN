@@ -29,7 +29,7 @@ class OpenAIWrapper:
             )
             logger.info(f"LLM initialized successfully with model: {self.model_name}")
             return llm
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.error(f"Failed to initialize LLM with model {self.model_name}: {e}")
             raise
 

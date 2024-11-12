@@ -32,8 +32,6 @@ class Settings(BaseSettings):
             return logging.INFO
         if self.LOG_LEVEL == "WARNING":
             return logging.WARNING
-        if self.LOG_LEVEL == "WARNING":
-            return logging.WARNING
         if self.LOG_LEVEL == "ERROR":
             return logging.ERROR
         return logging.CRITICAL

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 from langchain.callbacks.manager import CallbackManager
 from langchain_community.callbacks.openai_info import OpenAICallbackHandler
 from langchain_openai import ChatOpenAI  # Updated import
@@ -12,9 +10,7 @@ from scan.project_logger import logger
 class OpenAIWrapper:
     """Wrapper for OpenAI LLM interactions using LangChain."""
 
-    def __init__(self, api_key: str, model_name: str = "gpt-4", max_tokens: int = 1000) -> None:
-        self.api_key = api_key
-        os.environ["OPENAI_API_KEY"] = self.api_key
+    def __init__(self, model_name: str = "gpt-4", max_tokens: int = 1000) -> None:
         self.model_name = model_name
         self.max_tokens = max_tokens
         self.callback_handler = OpenAICallbackHandler()

@@ -1152,6 +1152,15 @@ wheels = [
 ]
 
 [[package]]
+name = "google-search-results"
+version = "2.4.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/77/30/b3a6f6a2e00f8153549c2fa345c58ae1ce8e5f3153c2fe0484d444c3abcb/google_search_results-2.4.2.tar.gz", hash = "sha256:603a30ecae2af8e600b22635757a6df275dad4b934f975e67878ccd640b78245", size = 18818 }
+
+[[package]]
 name = "googleapis-common-protos"
 version = "1.65.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3426,6 +3435,7 @@ dependencies = [
     { name = "chromadb" },
     { name = "crewai" },
     { name = "duckduckgo-search" },
+    { name = "google-search-results" },
     { name = "langchain" },
     { name = "langchain-community" },
     { name = "langchain-google-genai" },
@@ -3452,6 +3462,7 @@ requires-dist = [
     { name = "chromadb", specifier = "==0.5.18" },
     { name = "crewai", specifier = "==0.76.9" },
     { name = "duckduckgo-search", specifier = "==6.3.4" },
+    { name = "google-search-results", specifier = "==2.4.2" },
     { name = "langchain", specifier = "==0.3.7" },
     { name = "langchain-community", specifier = "==0.3.4" },
     { name = "langchain-google-genai", specifier = "==2.0.4" },

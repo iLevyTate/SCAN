@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from langchain.callbacks.manager import CallbackManager
 from langchain_community.callbacks.openai_info import OpenAICallbackHandler
 from langchain_openai import ChatOpenAI  # Updated import
 
@@ -14,7 +13,6 @@ class OpenAIWrapper:
         self.model_name = model_name
         self.max_tokens = max_tokens
         self.callback_handler = OpenAICallbackHandler()
-        self.callback_manager = CallbackManager([self.callback_handler])
         self.llm = self.initialize_llm()
 
     def initialize_llm(self) -> ChatOpenAI:
@@ -24,7 +22,7 @@ class OpenAIWrapper:
                 name=self.model_name,
                 temperature=0,
                 max_tokens=self.max_tokens,
-                callback_manager=self.callback_manager,
+                callbacks=[self.callback_handler],
                 verbose=False,
             )
             logger.info(f"LLM initialized successfully with model: {self.model_name}")

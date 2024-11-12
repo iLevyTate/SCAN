@@ -7,6 +7,7 @@ on:
   pull_request:
 env:
   PYTHON_VERSION: "3.10"
+  OPENAI_API_KEY: "some_key"
 jobs:
   linting:
     runs-on: ubuntu-latest

@@ -1,5 +1,5 @@
 from langchain.tools import Tool
-from langchain.utilities import SerpAPIWrapper
+from langchain_community.utilities import SerpAPIWrapper
 
 from scan.config import settings
 

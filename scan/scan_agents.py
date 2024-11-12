@@ -76,27 +76,27 @@ class PFCAgents:
             return dedent("""
                 Make decisions based on integrated logical, emotional, and social perspectives.
                 Ensure you synthesize information effectively and provide strategic recommendations.
-            """)
+            """).strip()
         elif role_name == "VMPFC":
             return dedent("""
                 Provide emotional insights to aid in decision-making.
                 Assess emotional factors thoroughly and concisely.
-            """)
+            """).strip()
         elif role_name == "OFC":
             return dedent("""
                 Assess actions based on rewards and manage impulses effectively.
                 Provide a concise evaluation of potential rewards and risks.
-            """)
+            """).strip()
         elif role_name == "ACC":
             return dedent("""
                 Resolve conflicts in the decision-making process.
                 Analyze conflicts carefully and provide clear resolution strategies.
-            """)
+            """).strip()
         else:
             return dedent("""
                 Analyze social interactions and provide insights for personal growth.
                 Focus on social cognition aspects relevant to the topic.
-            """)
+            """).strip()
 
     def get_all_agents(self) -> list[Agent]:
         """Returns a list of all initialized agents."""

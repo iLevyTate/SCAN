@@ -10,25 +10,20 @@ description = "This project aims to develop a sophisticated multi-agent system t
 authors = [ { name = "Ben Kennedy", email = "benjaminjoelkennedy@gmail.com" } ]
 license = "MIT"
 dependencies = [
-  "chromadb==0.5.18",
   "crewai==0.76.9",
-  "duckduckgo-search==6.3.4",
   "google-search-results==2.4.2",
   "langchain==0.3.7",
   "langchain-community==0.3.4",
-  "langchain-google-genai==2.0.4",
   "langchain-openai==0.2.6",
-  "mypy[faster-cache]==1.13.0",
   "openai==1.54.3",
   "pydantic==2.9.2",
   "pydantic-settings==2.6.1",
   "rich==13.9.4",
-  "tenacity==9.0.0",
-  "tiktoken==0.7.0",
 ]
 
 [dependency-groups]
 dev = [
+  "mypy[faster-cache]==1.13.0",
   "pre-commit==4.0.1",
   "pytest==8.3.3",
   "pytest-cov==6.0.0",

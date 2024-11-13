@@ -1,5 +1,4 @@
-# scan/scan_agents.py
-
+from functools import cached_property
 from textwrap import dedent
 from typing import Literal, TypeAlias, cast
 
@@ -24,15 +23,17 @@ class PFCAgents:
             "ACC": settings.ACC_MODEL,
             "MPFC": settings.MPFC_MODEL,
         }
-        self.agents: dict[str, Agent] = {}
-        self.initialize_agents()
 
-    def initialize_agents(self) -> None:
-        """Initialize all PFC agents."""
+    @cached_property
+    def agents(self) -> dict[str, Agent]:
+        """Get the agents."""
+        agent_dict = {}
         for role_name in self.agent_models.keys():
             agent = self.create_agent(cast(RoleName, role_name))
-            self.agents[role_name] = agent
+            agent_dict[role_name] = agent
             logger.info(f"{role_name} agent initialized with model: {self.agent_models[role_name]}")
+
+        return agent_dict
 
     def create_agent(self, role_name: RoleName) -> Agent:
         """Creates an agent with the specified role."""

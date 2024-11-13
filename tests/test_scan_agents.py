@@ -8,8 +8,7 @@ def pfc_agents():
     return PFCAgents(topic="Some topic")
 
 
-def test_initialize_agents(pfc_agents):
-    pfc_agents.initialize_agents()
+def test_agents(pfc_agents):
     assert list(pfc_agents.agents.keys()) == ["DLPFC", "VMPFC", "OFC", "ACC", "MPFC"]
 
 

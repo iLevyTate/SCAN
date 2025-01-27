@@ -16,7 +16,7 @@ dependencies = [
   "langchain-community==0.3.4",
   "langchain-openai==0.2.6",
   "openai==1.54.3",
-  "pydantic==2.9.2",
+  "pydantic==2.10.6",
   "pydantic-settings==2.6.1",
   "rich==13.9.4",
 ]

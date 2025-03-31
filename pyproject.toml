@@ -14,7 +14,7 @@ dependencies = [
   "google-search-results==2.4.2",
   "langchain==0.3.7",
   "langchain-community==0.3.4",
-  "langchain-openai==0.2.6",
+  "langchain-openai==0.3.11",
   "openai==1.54.3",
   "pydantic==2.9.2",
   "pydantic-settings==2.6.1",

@@ -1,12 +1,18 @@
+from __future__ import annotations
+
 from functools import cached_property
 from textwrap import dedent
-from typing import Literal, TypeAlias, cast
+from typing import TYPE_CHECKING, Literal, TypeAlias, cast
 
 from crewai import Agent
 
 from scan.config import settings
 from scan.openai_llm import OpenAIWrapper
 from scan.project_logger import logger
+from scan.tools.search_tools import SearchTools
+
+if TYPE_CHECKING:
+    from langchain.tools import Tool
 
 RoleName: TypeAlias = Literal["DLPFC", "VMPFC", "OFC", "ACC", "MPFC"]
 
@@ -23,6 +29,14 @@ class PFCAgents:
             "ACC": settings.ACC_MODEL,
             "MPFC": settings.MPFC_MODEL,
         }
+        self.tools = self._build_tools()
+
+    def _build_tools(self) -> list[Tool]:
+        """Build the shared tool list for agents (search enabled when configured)."""
+        if not settings.SERPER_API_KEY:
+            logger.info("SERPER_API_KEY not set; agents will run without the search tool.")
+            return []
+        return [SearchTools().get_search_tool()]
 
     @cached_property
     def agents(self) -> dict[str, Agent]:
@@ -55,7 +69,7 @@ class PFCAgents:
             llm=llm,
             memory=True,
             verbose=False,
-            tools=[],
+            tools=self.tools,
         )
 
     def get_backstory(self, role_name: RoleName) -> str:

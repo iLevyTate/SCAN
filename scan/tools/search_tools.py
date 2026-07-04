@@ -1,7 +1,14 @@
 from langchain.tools import Tool
 from langchain_community.utilities import SerpAPIWrapper
+from pydantic import BaseModel, Field
 
 from scan.config import settings
+
+
+class SearchInput(BaseModel):
+    """Input schema for the search tool."""
+
+    query: str = Field(description="The search query to run against the internet.")
 
 
 class SearchTools:
@@ -18,4 +25,5 @@ class SearchTools:
             name="Search",
             func=self.search.run,
             description="Useful for answering questions about current events or the internet.",
+            args_schema=SearchInput,
         )

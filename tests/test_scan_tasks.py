@@ -47,3 +47,22 @@ def test_social_cognition_task(pfc_tasks):
 
     assert task.name == "social_cognition_task"
     assert topic in task.description
+
+
+def test_task_context_wiring(pfc_tasks):
+    # Regression: dependencies were passed via an invalid `dependencies=` kwarg that
+    # crewai silently dropped, so inter-task context was never actually applied.
+    topic = "Test topic"
+    emotional = pfc_tasks.emotional_risk_assessment_task(topic)
+    reward = pfc_tasks.reward_evaluation_task(topic)
+    social = pfc_tasks.social_cognition_task(topic)
+
+    decision = pfc_tasks.complex_decision_making_task(topic, context=[emotional, reward, social])
+    conflict = pfc_tasks.conflict_resolution_task(topic, context=[emotional, reward])
+
+    assert decision.context == [emotional, reward, social]
+    assert conflict.context == [emotional, reward]
+
+
+def test_task_context_defaults_empty(pfc_tasks):
+    assert pfc_tasks.complex_decision_making_task("Test topic").context == []

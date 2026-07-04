@@ -1,5 +1,6 @@
 from crewai.crews.crew_output import CrewOutput, TaskOutput
 
+from scan import main as main_module
 from scan.main import CustomCrew
 
 
@@ -38,3 +39,13 @@ def test_get_task_outputs():
     result = crew.get_task_outputs(output)
 
     assert result == {"task 1": "raw task 1", "task 2": "raw task 2"}
+
+
+def test_main_reports_missing_openai_key(monkeypatch, capsys):
+    # Regression: the friendly MissingEnvironmentVariableError path was dead because the
+    # error was caught but never raised. main() should now report it without crashing.
+    monkeypatch.setattr(main_module.settings, "OPENAI_API_KEY", None)
+
+    main_module.main()
+
+    assert "OPENAI_API_KEY" in capsys.readouterr().out

@@ -15,7 +15,7 @@ class PFCTasks:
     def __init__(self, agents: PFCAgents) -> None:
         self.agents = agents
 
-    def complex_decision_making_task(self, topic: str) -> Task:
+    def complex_decision_making_task(self, topic: str, context: list[Task] | None = None) -> Task:
         """Task for DLPFC agent to make complex decisions."""
         description = dedent(f"""
             Analyze a complex situation involving '{topic}' by integrating insights from other agents.
@@ -31,11 +31,7 @@ class PFCTasks:
             description=description,
             expected_output="A comprehensive analytical report with strategic recommendations.",
             agent=self.agents.agents["DLPFC"],
-            dependencies=[
-                "emotional_risk_assessment_task",
-                "reward_evaluation_task",
-                "social_cognition_task",
-            ],
+            context=context or [],
         )
 
     def emotional_risk_assessment_task(self, topic: str) -> Task:
@@ -74,7 +70,7 @@ class PFCTasks:
             agent=self.agents.agents["OFC"],
         )
 
-    def conflict_resolution_task(self, topic: str) -> Task:
+    def conflict_resolution_task(self, topic: str, context: list[Task] | None = None) -> Task:
         """Task for ACC agent to resolve conflicts."""
         description = dedent(f"""
             Resolve conflicts between emotional, reward-based, and logical inputs for '{topic}'.
@@ -90,10 +86,7 @@ class PFCTasks:
             description=description,
             expected_output="A report detailing conflict resolution strategies and outcomes.",
             agent=self.agents.agents["ACC"],
-            dependencies=[
-                "emotional_risk_assessment_task",
-                "reward_evaluation_task",
-            ],
+            context=context or [],
         )
 
     def social_cognition_task(self, topic: str) -> Task:

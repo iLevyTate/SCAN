@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from crewai import Crew, Process
 
+from scan.config import settings
 from scan.console import console
 from scan.errors import MissingEnvironmentVariableError
 from scan.openai_llm import OpenAIWrapper
@@ -20,20 +21,32 @@ class CustomCrew:
 
     def __init__(self, topic: str) -> None:
         self.topic = topic
-        self.manager_llm = OpenAIWrapper(model_name="gpt-4").llm
+        self.manager_llm = OpenAIWrapper(model_name=settings.MANAGER_MODEL).llm
         self.agents = PFCAgents(topic=self.topic)
         self.tasks = PFCTasks(agents=self.agents)
 
     def run(self) -> None:
         """Execute all tasks and generate the final output."""
         try:
-            # Initialize tasks
+            # Build the independent tasks first so dependent tasks can reference
+            # them as context (this wires the real inter-task dependencies).
+            emotional_task = self.tasks.emotional_risk_assessment_task(self.topic)
+            reward_task = self.tasks.reward_evaluation_task(self.topic)
+            social_task = self.tasks.social_cognition_task(self.topic)
+            conflict_task = self.tasks.conflict_resolution_task(
+                self.topic, context=[emotional_task, reward_task]
+            )
+            decision_task = self.tasks.complex_decision_making_task(
+                self.topic, context=[emotional_task, reward_task, social_task]
+            )
+
+            # Order tasks so each dependency precedes the task that consumes it.
             tasks = [
-                self.tasks.complex_decision_making_task(self.topic),
-                self.tasks.emotional_risk_assessment_task(self.topic),
-                self.tasks.reward_evaluation_task(self.topic),
-                self.tasks.conflict_resolution_task(self.topic),
-                self.tasks.social_cognition_task(self.topic),
+                emotional_task,
+                reward_task,
+                social_task,
+                conflict_task,
+                decision_task,
             ]
 
             # Create the crew
@@ -97,6 +110,8 @@ def main() -> None:
     console.print("## Welcome to the SCAN System")
     console.print("---------------------------------------------------------------")
     try:
+        if not settings.OPENAI_API_KEY:
+            raise MissingEnvironmentVariableError("OPENAI_API_KEY")
         topic = input("Please enter the topic you need help with: ")
         console.print(f"You entered: {topic}")
         custom_crew = CustomCrew(topic=topic)

@@ -10,13 +10,16 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
-    OPENAI_API_KEY: str
+    # Optional at construction so importing this module never crashes when the key
+    # is absent; presence is validated explicitly at runtime (see scan.main.main).
+    OPENAI_API_KEY: str | None = None
     SERPER_API_KEY: str | None = None
     DLPFC_MODEL: str = "gpt-4"
     VMPFC_MODEL: str = "gpt-4"
     OFC_MODEL: str = "gpt-4"
     ACC_MODEL: str = "gpt-4"
     MPFC_MODEL: str = "gpt-4"
+    MANAGER_MODEL: str = "gpt-4"
     # Default logging to warning because crewai has a logger that is extrememly noisy and I haven't
     # found a way to turn it off.
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "WARNING"
@@ -37,4 +40,4 @@ class Settings(BaseSettings):
         return logging.CRITICAL
 
 
-settings = Settings()  # type: ignore
+settings = Settings()

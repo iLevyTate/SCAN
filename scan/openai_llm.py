@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from langchain_community.callbacks.openai_info import OpenAICallbackHandler
-from langchain_openai import ChatOpenAI  # Updated import
+from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
 
+from scan.config import settings
 from scan.project_logger import logger
 
 
@@ -19,9 +21,12 @@ class OpenAIWrapper:
         """Initialize the LangChain OpenAI LLM."""
         try:
             llm = ChatOpenAI(
-                name=self.model_name,
+                model=self.model_name,
                 temperature=0,
                 max_tokens=self.max_tokens,
+                # Pass the key from settings (loaded from .env) so a .env-only key
+                # is honored; ChatOpenAI would otherwise only read os.environ.
+                api_key=SecretStr(settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None,
                 callbacks=[self.callback_handler],
                 verbose=False,
             )

@@ -48,12 +48,28 @@ The SCAN project offers a multi-agent system designed to simulate the functions 
 
 ## Configuration
 
-To configure the project, create a `.env` file in the root directory with the following variables:
+To configure the project, create a `.env` file in the root directory. `OPENAI_API_KEY` is the
+only required variable; see [`example.env`](example.env) for the full list.
 
 ```env
-# OpenAI API Key
+# Required
 OPENAI_API_KEY=your_openai_api_key_here
+
+# Optional: enables the web search tool. This is a SerpAPI (serpapi.com) key --
+# serper.dev is a different service and its keys will not work here.
+SERPAPI_API_KEY=your_serpapi_api_key_here
 ```
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `OPENAI_API_KEY` | — | **Required.** OpenAI credentials. |
+| `SERPAPI_API_KEY` | unset | Enables the search tool. Accepts the legacy name `SERPER_API_KEY`. |
+| `DLPFC_MODEL`, `VMPFC_MODEL`, `OFC_MODEL`, `ACC_MODEL`, `MPFC_MODEL` | `gpt-4o` | Model per PFC agent. |
+| `MAX_TOKENS` | `4000` | Maximum tokens per agent response. |
+| `LOG_LEVEL` | `WARNING` | `DEBUG`, `INFO`, `WARNING`, `ERROR` or `CRITICAL`. |
+| `DISABLE_TELEMETRY` | `true` | crewai ships anonymous traces to `telemetry.crewai.com`; disabled by default. |
+
+Unrecognised variables in `.env` are ignored, so SCAN can share a `.env` with other tools.
 
 ## Usage
 
@@ -72,11 +88,8 @@ uv sync --frozen
 
 ### Set up Environment Variables
 
-Set up your environment variables in the `.env` file as shown above.
-
-### (Optional) Export the API Key in the Terminal
-
-If the API key from the `.env` file is not being picked up, you can export it directly in the terminal:
+Set up your environment variables in the `.env` file as shown above. Real environment variables
+take precedence over `.env`, so you can also export them directly:
 
 ```bash
 export OPENAI_API_KEY=your_openai_api_key_here
@@ -87,6 +100,9 @@ export OPENAI_API_KEY=your_openai_api_key_here
 ```bash
 uv run run-scan
 ```
+
+`run-scan` exits non-zero if the run fails (`1` on error, `2` on missing input, `130` if
+interrupted), so it is safe to use in scripts.
 
 ## Contributors
 

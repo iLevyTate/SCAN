@@ -8,8 +8,10 @@ from crewai import Agent
 
 from scan.config import settings
 from scan.openai_llm import OpenAIWrapper
-from scan.project_logger import logger
+from scan.project_logger import get_logger
 from scan.tools.search_tools import SearchTools
+
+logger = get_logger(__name__)
 
 if TYPE_CHECKING:
     from langchain.tools import Tool
@@ -33,8 +35,8 @@ class PFCAgents:
 
     def _build_tools(self) -> list[Tool]:
         """Build the shared tool list for agents (search enabled when configured)."""
-        if not settings.SERPER_API_KEY:
-            logger.info("SERPER_API_KEY not set; agents will run without the search tool.")
+        if not settings.SERPAPI_API_KEY:
+            logger.info("SERPAPI_API_KEY not set; agents will run without the search tool.")
             return []
         return [SearchTools().get_search_tool()]
 
@@ -62,12 +64,14 @@ class PFCAgents:
 
         goal = self.get_goal(role_name)
 
+        # Note: crewai's Agent has no `memory` field, and pydantic silently drops unknown
+        # kwargs -- passing `memory=True` here did nothing at all. Crew-level memory is the
+        # only real switch, and it is deliberately off (see scan.main.CustomCrew.run).
         return Agent(
             role=role_name,
             backstory=backstory,
             goal=goal,
             llm=llm,
-            memory=True,
             verbose=False,
             tools=self.tools,
         )

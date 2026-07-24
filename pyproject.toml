@@ -52,7 +52,9 @@ addopts = "--cov=scan --cov-report term-missing --no-cov-on-fail"
 [tool.ruff]
 line-length = 100
 target-version = "py310"
-fix = true
+# Deliberately no `fix = true`: it made `ruff check` auto-repair the working tree and exit 0,
+# so the CI lint gate could never fail. Fixing is opt-in via `ruff check --fix` (see the
+# pre-commit hook), while plain `ruff check` stays a real check.
 
 [tool.ruff.lint]
 select = [

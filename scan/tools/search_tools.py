@@ -12,12 +12,12 @@ class SearchInput(BaseModel):
 
 
 class SearchTools:
-    """Tools for searching the internet."""
+    """Tools for searching the internet via SerpAPI (serpapi.com)."""
 
     def __init__(self) -> None:
-        if not settings.SERPER_API_KEY:
-            raise ValueError("The SERPER_API_KEY environment variable must be set")
-        self.search = SerpAPIWrapper(serpapi_api_key=settings.SERPER_API_KEY)
+        if not settings.SERPAPI_API_KEY:
+            raise ValueError("The SERPAPI_API_KEY environment variable must be set")
+        self.search = SerpAPIWrapper(serpapi_api_key=settings.SERPAPI_API_KEY)
 
     def get_search_tool(self) -> Tool:
         """Returns a search tool that agents can use."""

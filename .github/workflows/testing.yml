@@ -24,11 +24,12 @@ jobs:
       - name: Install Dependencies
         run: uv sync --frozen
       - name: Ruff format check
-        run: uv run ruff format scan --check
+        run: uv run ruff format scan tests --check
       - name: Lint with ruff
-        run: uv run ruff check scan
+        # --no-fix so the gate fails on violations instead of silently repairing them.
+        run: uv run ruff check scan tests --no-fix
       - name: mypy check
-        run: uv run mypy scan
+        run: uv run mypy scan tests
   testing:
     strategy:
       fail-fast: false

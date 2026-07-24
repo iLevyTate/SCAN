@@ -12,11 +12,17 @@ repos:
       - id: trailing-whitespace
       - id: no-commit-to-branch
         args: [--branch, main] # Specify the branch to prevent direct commits
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.13.0
+  # Run mypy through the project's own environment rather than mirrors-mypy. That hook runs in
+  # an isolated venv with `--ignore-missing-imports` and none of the project's dependencies, so
+  # crewai/langchain/rich all degrade to `Any` and it reports success on errors CI then fails on.
+  - repo: local
     hooks:
       - id: mypy
-        additional_dependencies: [pydantic, orjson, types-aiofiles, types-ujson]
+        name: mypy
+        entry: uv run mypy scan tests
+        language: system
+        types: [python]
+        pass_filenames: false
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.7.3
     hooks:

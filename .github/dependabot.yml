@@ -1,11 +1,28 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
-
 version: 2
 updates:
-  - package-ecosystem: "pip" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  # "uv", not "pip": the pip updater does not understand uv.lock, so it would edit
+  # pyproject.toml and leave the lock stale -- which the --locked check in CI now rejects,
+  # and which used to merge green while testing the old version.
+  - package-ecosystem: "uv"
+    directory: "/"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      dev-dependencies:
+        patterns: ["mypy", "pre-commit", "pytest", "pytest-cov", "ruff"]
+      runtime-dependencies:
+        patterns: ["*"]
+        exclude-patterns: ["mypy", "pre-commit", "pytest", "pytest-cov", "ruff"]
+
+  # The actions below were never being updated at all, and unlike the Python pins they carry
+  # no lockfile, so this is where drift actually accumulates.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns: ["*"]

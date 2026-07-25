@@ -5,24 +5,37 @@ on:
     branches:
       - main
   pull_request:
+
+permissions:
+  contents: read
+
+# Supersede in-progress runs for the same ref rather than letting them stack up.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   PYTHON_VERSION: "3.10"
-  OPENAI_API_KEY: "some_key"
+
 jobs:
   linting:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
+          cache-suffix: ${{ env.PYTHON_VERSION }}
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install Dependencies
-        run: uv sync --frozen
+        # --locked, not --frozen: --frozen installs the lockfile without checking it against
+        # pyproject.toml, so a bumped pin with a stale lock goes green testing the old version.
+        run: uv sync --locked
       - name: Ruff format check
         run: uv run ruff format scan tests --check
       - name: Lint with ruff
@@ -30,23 +43,44 @@ jobs:
         run: uv run ruff check scan tests --no-fix
       - name: mypy check
         run: uv run mypy scan tests
+      - name: Pre-commit hooks
+        # Six hooks (check-toml, check-yaml, end-of-file-fixer, trailing-whitespace,
+        # debug-statements, check-added-large-files) were enforced locally and nowhere in CI.
+        # Skips: no-commit-to-branch exists to stop humans committing to main and would fail
+        # every push-to-main build; mypy and ruff already ran as explicit steps above, and the
+        # mypy hook shells out to `uv run`, which misbehaves nested inside another `uv run`.
+        env:
+          SKIP: no-commit-to-branch,mypy,ruff,ruff-format
+        run: uv run pre-commit run --all-files --show-diff-on-failure
+      - name: Build the package
+        # Catches packaging breakage here rather than at publish time.
+        run: uv build
+
   testing:
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Without this uv picks whatever interpreter it finds first, so nothing guaranteed a
+      # matrix leg actually tested the version it claims to.
+      UV_PYTHON: ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
+          cache-suffix: ${{ matrix.python-version }}
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Dependencies
-        run: uv sync --frozen
+        run: uv sync --locked
+      - name: Verify the interpreter under test
+        run: uv run python -c "import sys; assert sys.version.startswith('${{ matrix.python-version }}'), sys.version"
       - name: Run tests
         run: uv run pytest

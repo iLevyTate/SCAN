@@ -78,7 +78,11 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 minversion = "6.0"
 testpaths = ["tests"]
-addopts = "--cov=scan --cov-report term-missing --no-cov-on-fail --strict-markers -ra"
+addopts = "--cov=scan --cov-report term-missing --cov-fail-under=95 --strict-markers --strict-config -ra"
+
+[tool.coverage.run]
+branch = true
+source = ["scan"]
 
 [tool.coverage.report]
 exclude_also = [

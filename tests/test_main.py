@@ -3,7 +3,9 @@ from crewai import Process
 from crewai.crews.crew_output import CrewOutput, TaskOutput
 
 from scan import main as main_module
+from scan.config import settings
 from scan.main import REPORT_SECTIONS, CustomCrew
+from scan.roles import BY_TASK_NAME, execution_order
 
 ALL_SECTIONS = {
     "complex_decision_making_task": "Something complex",
@@ -70,24 +72,34 @@ def test_report_sections_match_the_task_names():
     assert {name for _, name in REPORT_SECTIONS} == task_names
 
 
+def test_report_headings_name_the_agent_that_produced_them():
+    # Regression: REPORT_SECTIONS used to embed the region as a naked literal, so reassigning
+    # a task to another agent would leave the heading quietly lying and every test still green.
+    tasks = {task.name: task for task in CustomCrew("Some topic").build_tasks()}
+
+    for title, task_name in REPORT_SECTIONS:
+        assert title.endswith(f"({tasks[task_name].agent.role})")
+        assert title.startswith(BY_TASK_NAME[task_name].section_title)
+
+
 def test_build_tasks_wires_context_and_orders_dependencies():
+    # The graph itself is asserted against the role table in test_scan_tasks.py; here we only
+    # check that CustomCrew hands crewai a correctly ordered list.
     crew = CustomCrew("Some topic")
     tasks = crew.build_tasks()
-    by_name = {task.name: task for task in tasks}
     order = [task.name for task in tasks]
 
-    assert by_name["complex_decision_making_task"].context == [
-        by_name["emotional_risk_assessment_task"],
-        by_name["reward_evaluation_task"],
-        by_name["social_cognition_task"],
-    ]
-    assert by_name["conflict_resolution_task"].context == [
-        by_name["emotional_risk_assessment_task"],
-        by_name["reward_evaluation_task"],
-    ]
+    assert order == [role.task_name for role in execution_order()]
     for task in tasks:
-        for dependency in task.context or []:
+        for dependency in task.context:
             assert order.index(dependency.name) < order.index(task.name)
+
+
+def test_the_first_task_is_the_only_one_without_dependencies():
+    tasks = CustomCrew("Some topic").build_tasks()
+
+    assert tasks[0].context == []
+    assert all(task.context for task in tasks[1:])
 
 
 def test_run_uses_sequential_process_so_tasks_keep_their_own_agent(monkeypatch):
@@ -139,7 +151,7 @@ def test_run_propagates_failures(monkeypatch):
 def test_main_reports_missing_openai_key(monkeypatch, capsys):
     # Regression: the friendly MissingEnvironmentVariableError path was dead because the
     # error was caught but never raised.
-    monkeypatch.setattr(main_module.settings, "OPENAI_API_KEY", None)
+    monkeypatch.setattr(settings, "OPENAI_API_KEY", None)
 
     with pytest.raises(SystemExit) as excinfo:
         main_module.main()

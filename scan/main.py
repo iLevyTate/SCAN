@@ -5,10 +5,12 @@ from typing import TYPE_CHECKING, Any
 
 from crewai import Crew, Process
 
-from scan.config import apply_environment, settings
+from scan.config import apply_environment
+from scan.config import settings as default_settings
 from scan.console import console
 from scan.errors import MissingEnvironmentVariableError
 from scan.project_logger import configure_logging, get_logger
+from scan.roles import REPORT_ORDER
 from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
 
@@ -16,41 +18,30 @@ if TYPE_CHECKING:
     from crewai import Task
     from crewai.crews.crew_output import CrewOutput
 
+    from scan.config import Settings
+
 logger = get_logger(__name__)
 
-#: Report section title -> the task whose output fills it.
-REPORT_SECTIONS: tuple[tuple[str, str], ...] = (
-    ("Decision-making analysis (DLPFC)", "complex_decision_making_task"),
-    ("Emotional analysis (VMPFC)", "emotional_risk_assessment_task"),
-    ("Reward evaluation (OFC)", "reward_evaluation_task"),
-    ("Conflict resolution (ACC)", "conflict_resolution_task"),
-    ("Social insights (MPFC)", "social_cognition_task"),
+#: Report section title -> the task whose output fills it. Derived from scan.roles so a heading
+#: can never drift from the agent that actually produced the section.
+REPORT_SECTIONS: tuple[tuple[str, str], ...] = tuple(
+    (f"{role.section_title} ({role.name})", role.task_name) for role in REPORT_ORDER
 )
 
 
 class CustomCrew:
     """Manages PFC agents and tasks for the SCAN system."""
 
-    def __init__(self, topic: str) -> None:
+    def __init__(self, topic: str, settings: Settings | None = None) -> None:
         self.topic = topic
-        apply_environment()
-        self.agents = PFCAgents(topic=self.topic)
+        self.settings = settings if settings is not None else default_settings
+        apply_environment(self.settings)
+        self.agents = PFCAgents(topic=self.topic, settings=self.settings)
         self.tasks = PFCTasks(agents=self.agents)
 
     def build_tasks(self) -> list[Task]:
         """Build the task list, wiring dependencies through crewai's `context`."""
-        # Independent tasks first, so dependent tasks can reference them as context.
-        emotional_task = self.tasks.emotional_risk_assessment_task(self.topic)
-        reward_task = self.tasks.reward_evaluation_task(self.topic)
-        social_task = self.tasks.social_cognition_task(self.topic)
-        conflict_task = self.tasks.conflict_resolution_task(
-            self.topic, context=[emotional_task, reward_task]
-        )
-        decision_task = self.tasks.complex_decision_making_task(
-            self.topic, context=[emotional_task, reward_task, social_task]
-        )
-        # Ordered so each dependency precedes the task that consumes it.
-        return [emotional_task, reward_task, social_task, conflict_task, decision_task]
+        return self.tasks.build_all(self.topic)
 
     def run(self) -> str:
         """Execute all tasks and return the final report.
@@ -124,7 +115,7 @@ def main() -> None:
     console.print("## Welcome to the SCAN System")
     console.print("---------------------------------------------------------------")
     try:
-        if not settings.OPENAI_API_KEY:
+        if not default_settings.OPENAI_API_KEY:
             raise MissingEnvironmentVariableError("OPENAI_API_KEY")
         topic = input("Please enter the topic you need help with: ").strip()
         if not topic:

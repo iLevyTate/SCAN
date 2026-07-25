@@ -47,7 +47,13 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--cov=scan --cov-report term-missing --no-cov-on-fail"
+testpaths = ["tests"]
+addopts = "--cov=scan --cov-report term-missing --no-cov-on-fail --strict-markers -ra"
+
+[tool.coverage.report]
+exclude_also = [
+  "if TYPE_CHECKING:",
+]
 
 [tool.ruff]
 line-length = 100

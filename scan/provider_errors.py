@@ -33,15 +33,20 @@ def _model_setting(models: dict[str, str], text: str) -> tuple[str, str] | None:
 
     Longest name first: model names nest ("gpt-4o" is a substring of "gpt-4o-typoo"), so a
     shorter default configured on another region would otherwise claim the match.
+
+    Several regions commonly share one model -- every ``*_MODEL`` default is the same string --
+    and in that case the provider message cannot tell us which region was running. All the
+    candidate settings are named rather than guessing one.
     """
     candidates = sorted(
         ((model, setting) for setting, model in models.items() if model),
         key=lambda pair: len(pair[0]),
         reverse=True,
     )
-    for model, setting in candidates:
+    for model, _ in candidates:
         if model in text:
-            return model, setting
+            sharing = sorted(setting for setting, value in models.items() if value == model)
+            return model, " / ".join(sharing)
     return None
 
 

@@ -4,6 +4,7 @@ from crewai.crews.crew_output import CrewOutput, TaskOutput
 
 from scan import main as main_module
 from scan import report
+from scan.config import settings
 from scan.main import REPORT_SECTIONS, CustomCrew
 from scan.roles import BY_TASK_NAME, execution_order
 
@@ -126,4 +127,91 @@ def test_run_propagates_failures(monkeypatch):
     monkeypatch.setattr(main_module, "Crew", ExplodingCrew)
 
     with pytest.raises(RuntimeError, match="kickoff exploded"):
+        CustomCrew("Some topic").run()
+
+
+def test_token_usage_is_logged(monkeypatch, caplog):
+    # The only observability the app has, and it was never exercised.
+    from crewai.types.usage_metrics import UsageMetrics
+
+    class UsageCrew:
+        def __init__(self, **kwargs):
+            pass
+
+        def kickoff(self):
+            output = _crew_output(ALL_SECTIONS)
+            output.token_usage = UsageMetrics(
+                total_tokens=1234, prompt_tokens=1000, completion_tokens=234
+            )
+            return output
+
+    monkeypatch.setattr(main_module, "Crew", UsageCrew)
+    with caplog.at_level("INFO", logger="scan.main"):
+        CustomCrew("Some topic").run()
+
+    assert "Token usage: 1234 total (1000 prompt, 234 completion)" in caplog.text
+
+
+def test_a_named_but_empty_output_is_warned_about(caplog):
+    crew = CustomCrew("Some topic")
+    output = CrewOutput(
+        tasks_output=[TaskOutput(description="d", name="reward_evaluation_task", raw="", agent="a")]
+    )
+
+    assert crew.get_task_outputs(output) == {}
+    assert "No output found for task: reward_evaluation_task" in caplog.text
+
+
+def test_completed_outputs_accumulate_as_tasks_land():
+    crew = CustomCrew("Some topic")
+    callback = crew._on_task_complete(None)
+
+    callback(TaskOutput(description="d", name="reward_evaluation_task", raw="body", agent="OFC"))
+
+    assert crew.completed == {"reward_evaluation_task": "body"}
+    assert "body" in crew.partial_report()
+    assert "Incomplete report." in crew.partial_report()
+
+
+def test_provider_errors_are_translated_at_the_boundary(monkeypatch):
+    # A mistyped model must arrive as something the user can act on, not as a raw litellm
+    # message with no hint that the fix is in their own configuration.
+    import openai
+
+    from scan.errors import ModelNotAvailableError
+
+    # A model unique to one region, so the provider message is unambiguous about which
+    # setting to blame.
+    monkeypatch.setattr(settings, "DLPFC_MODEL", "gpt-4o-typoo")
+    crew = CustomCrew("Some topic")
+    raw = openai.NotFoundError.__new__(openai.NotFoundError)
+    Exception.__init__(raw, "The model `gpt-4o-typoo` does not exist")
+
+    class ExplodingCrew:
+        def __init__(self, **kwargs):
+            pass
+
+        def kickoff(self):
+            raise raw
+
+    monkeypatch.setattr(main_module, "Crew", ExplodingCrew)
+
+    with pytest.raises(ModelNotAvailableError) as excinfo:
+        crew.run()
+
+    assert excinfo.value.__cause__ is raw
+    assert "DLPFC_MODEL" in str(excinfo.value)
+
+
+def test_unrelated_errors_pass_through_untranslated(monkeypatch):
+    class ExplodingCrew:
+        def __init__(self, **kwargs):
+            pass
+
+        def kickoff(self):
+            raise RuntimeError("nothing to do with the provider")
+
+    monkeypatch.setattr(main_module, "Crew", ExplodingCrew)
+
+    with pytest.raises(RuntimeError, match="nothing to do with the provider"):
         CustomCrew("Some topic").run()

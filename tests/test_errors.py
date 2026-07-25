@@ -109,3 +109,37 @@ def test_translate_maps_timeouts_and_names_the_setting():
     assert isinstance(translated, ProviderTimeoutError)
     assert "12.0s" in str(translated)
     assert "--timeout" in str(translated)
+
+
+def test_translate_names_every_region_sharing_an_ambiguous_model():
+    # All five *_MODEL defaults are the same string, so a provider complaint about that model
+    # genuinely cannot say which region was running. Name them all rather than guess one.
+    shared = Settings(OPENAI_API_KEY="k")
+    raw = openai.NotFoundError.__new__(openai.NotFoundError)
+    Exception.__init__(raw, f"The model `{shared.DLPFC_MODEL}` does not exist")
+
+    translated = translate(raw, shared)
+
+    assert isinstance(translated, ModelNotAvailableError)
+    for role_setting in ("ACC_MODEL", "DLPFC_MODEL", "MPFC_MODEL", "OFC_MODEL", "VMPFC_MODEL"):
+        assert role_setting in translated.setting
+
+
+def test_translate_maps_connection_failures():
+    raw = openai.APIConnectionError.__new__(openai.APIConnectionError)
+    Exception.__init__(raw, "connection refused")
+
+    translated = translate(raw, CONFIG)
+
+    assert isinstance(translated, ProviderError)
+    assert "Could not reach the provider" in str(translated)
+
+
+def test_translate_falls_back_for_an_unrecognised_bad_request():
+    raw = openai.BadRequestError.__new__(openai.BadRequestError)
+    Exception.__init__(raw, "something the model list cannot explain")
+
+    translated = translate(raw, CONFIG)
+
+    assert isinstance(translated, ProviderError)
+    assert not isinstance(translated, ModelNotAvailableError)

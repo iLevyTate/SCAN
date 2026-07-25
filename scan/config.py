@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     ACC_MODEL: str = "gpt-4o"
     MPFC_MODEL: str = "gpt-4o"
     MAX_TOKENS: int = 4000
+    # Per-request timeout in seconds. Bounds a hung connection, not the whole run: a task may
+    # make several requests when the search tool is in play.
+    REQUEST_TIMEOUT: float = 180.0
     # crewai ships opentelemetry tracing to telemetry.crewai.com on every run. Disabled by
     # default; set DISABLE_TELEMETRY=false to opt back in.
     DISABLE_TELEMETRY: bool = True

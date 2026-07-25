@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from crewai import Agent
 
 from scan.config import settings as default_settings
-from scan.openai_llm import build_llm
+from scan.llm import build_llm
 from scan.project_logger import get_logger
 from scan.roles import ROLES, PFCRole, RoleName, get_role
 from scan.tools.search_tools import SearchTools

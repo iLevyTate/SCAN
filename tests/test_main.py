@@ -3,17 +3,12 @@ from crewai import Process
 from crewai.crews.crew_output import CrewOutput, TaskOutput
 
 from scan import main as main_module
+from scan import report
 from scan.config import settings
 from scan.main import REPORT_SECTIONS, CustomCrew
 from scan.roles import BY_TASK_NAME, execution_order
 
-ALL_SECTIONS = {
-    "complex_decision_making_task": "Something complex",
-    "emotional_risk_assessment_task": "Something emotional",
-    "reward_evaluation_task": "Something rewarding",
-    "conflict_resolution_task": "Something conflicting",
-    "social_cognition_task": "Something social",
-}
+ALL_SECTIONS = {name: f"Body of {name}" for _, name in REPORT_SECTIONS}
 
 
 def _crew_output(outputs):
@@ -26,24 +21,12 @@ def _crew_output(outputs):
 
 
 def test_custom_crew_combine_outputs():
-    crew = CustomCrew("Some topic")
-    result = crew.combine_outputs(ALL_SECTIONS)
+    # Section-by-section rendering is covered in test_report.py; here we only check that
+    # CustomCrew passes its own topic through.
+    result = CustomCrew("Some topic").combine_outputs(ALL_SECTIONS)
 
-    assert (
-        result
-        == "## SCAN AI Final Report on: Some topic\n\n### Decision-making analysis (DLPFC)\nSomething complex\n\n### Emotional analysis (VMPFC)\nSomething emotional\n\n### Reward evaluation (OFC)\nSomething rewarding\n\n### Conflict resolution (ACC)\nSomething conflicting\n\n### Social insights (MPFC)\nSomething social\n\n"
-    )
-
-
-def test_combine_outputs_flags_missing_sections(caplog):
-    # Regression: an empty dict produced a complete-looking report with every section blank
-    # and no warning, so a failed run was indistinguishable from a successful one.
-    crew = CustomCrew("Some topic")
-
-    result = crew.combine_outputs({})
-
-    assert "No output was produced for this section." in result
-    assert "Report is missing output for" in caplog.text
+    assert result == report.build("Some topic", ALL_SECTIONS)
+    assert "Some topic" in result
 
 
 def test_get_task_outputs():
@@ -118,18 +101,17 @@ def test_run_uses_sequential_process_so_tasks_keep_their_own_agent(monkeypatch):
     monkeypatch.setattr(main_module, "Crew", FakeCrew)
     crew = CustomCrew("Some topic")
 
-    report = crew.run()
+    result = crew.run()
 
     assert captured["process"] == Process.sequential
     assert captured["memory"] is False
     assert [task.agent.role for task in captured["tasks"]] == [
-        "VMPFC",
-        "OFC",
-        "MPFC",
-        "ACC",
-        "DLPFC",
+        role.name for role in execution_order()
     ]
-    assert "Something complex" in report
+    # The agents the Crew is given must be the very objects the tasks hold: crewai matches
+    # them by identity, so a lost cache would silently decouple them.
+    assert set(map(id, captured["agents"])) == {id(task.agent) for task in captured["tasks"]}
+    assert ALL_SECTIONS["complex_decision_making_task"] in result
 
 
 def test_run_propagates_failures(monkeypatch):
@@ -157,11 +139,11 @@ def test_main_reports_missing_openai_key(monkeypatch, capsys):
         main_module.main()
 
     assert excinfo.value.code == 1
-    assert "OPENAI_API_KEY" in capsys.readouterr().out
+    assert "OPENAI_API_KEY" in capsys.readouterr().err
 
 
 def test_main_exits_non_zero_when_the_crew_fails(monkeypatch, capsys):
-    monkeypatch.setattr("builtins.input", lambda _: "a topic")
+    monkeypatch.setattr("builtins.input", lambda: "a topic")
 
     class ExplodingCrew:
         def __init__(self, topic):
@@ -176,21 +158,21 @@ def test_main_exits_non_zero_when_the_crew_fails(monkeypatch, capsys):
         main_module.main()
 
     assert excinfo.value.code == 1
-    assert "An unexpected error occurred" in capsys.readouterr().out
+    assert "An unexpected error occurred" in capsys.readouterr().err
 
 
 def test_main_rejects_an_empty_topic(monkeypatch, capsys):
-    monkeypatch.setattr("builtins.input", lambda _: "   ")
+    monkeypatch.setattr("builtins.input", lambda: "   ")
 
     with pytest.raises(SystemExit) as excinfo:
         main_module.main()
 
     assert excinfo.value.code == 2
-    assert "No topic was provided" in capsys.readouterr().out
+    assert "No topic was provided" in capsys.readouterr().err
 
 
 def test_main_handles_no_stdin(monkeypatch, capsys):
-    def raise_eof(_):
+    def raise_eof():
         raise EOFError
 
     monkeypatch.setattr("builtins.input", raise_eof)
@@ -199,11 +181,11 @@ def test_main_handles_no_stdin(monkeypatch, capsys):
         main_module.main()
 
     assert excinfo.value.code == 2
-    assert "No topic supplied on stdin" in capsys.readouterr().out
+    assert "No topic supplied on stdin" in capsys.readouterr().err
 
 
 def test_main_reports_interruption(monkeypatch, capsys):
-    def raise_interrupt(_):
+    def raise_interrupt():
         raise KeyboardInterrupt
 
     monkeypatch.setattr("builtins.input", raise_interrupt)
@@ -212,11 +194,14 @@ def test_main_reports_interruption(monkeypatch, capsys):
         main_module.main()
 
     assert excinfo.value.code == 130
-    assert "interrupted by user" in capsys.readouterr().out
+    assert "interrupted by user" in capsys.readouterr().err
 
 
-def test_main_prints_the_report_on_success(monkeypatch, capsys):
-    monkeypatch.setattr("builtins.input", lambda _: "a topic")
+def test_main_separates_the_report_from_the_chrome(monkeypatch, capsys):
+    # The whole point of the stream split: `run-scan > report.md` must capture the report and
+    # nothing else. Banner, echo, sign-off -- and input()'s own prompt, which it writes to
+    # stdout unless we print it ourselves -- all belong on stderr.
+    monkeypatch.setattr("builtins.input", lambda: "a topic")
 
     class StubCrew:
         def __init__(self, topic):
@@ -229,6 +214,13 @@ def test_main_prints_the_report_on_success(monkeypatch, capsys):
 
     main_module.main()
 
-    out = capsys.readouterr().out
-    assert "## report body" in out
-    assert "Thank you for using the SCAN System" in out
+    captured = capsys.readouterr()
+    assert captured.out == "## report body\n"
+    for chrome in (
+        "Welcome to the SCAN System",
+        "Please enter the topic",
+        "You entered: a topic",
+        "Thank you for using the SCAN System",
+    ):
+        assert chrome in captured.err
+        assert chrome not in captured.out

@@ -17,7 +17,7 @@ def test_bracketed_model_output_is_printed_verbatim(text, capsys):
     # them, silently changing the report the user paid for.
     console.print(text)
 
-    assert capsys.readouterr().out.rstrip("\n") == text
+    assert capsys.readouterr().err.rstrip("\n") == text
 
 
 def test_an_unmatched_closing_tag_does_not_raise(capsys):
@@ -26,7 +26,7 @@ def test_an_unmatched_closing_tag_does_not_raise(capsys):
     # after the crew had already completed.
     console.print("Checklist: [/] vet visit done.")
 
-    assert "[/]" in capsys.readouterr().out
+    assert "[/]" in capsys.readouterr().err
 
 
 def test_long_lines_are_not_hard_wrapped(capsys):
@@ -36,4 +36,4 @@ def test_long_lines_are_not_hard_wrapped(capsys):
 
     console.print(paragraph)
 
-    assert capsys.readouterr().out.count("\n") == 1
+    assert capsys.readouterr().err.count("\n") == 1

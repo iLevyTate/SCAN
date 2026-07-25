@@ -5,16 +5,19 @@ from typing import TYPE_CHECKING, Any
 
 from crewai import Crew, Process
 
+from scan import report
 from scan.config import apply_environment
 from scan.config import settings as default_settings
 from scan.console import console
 from scan.errors import MissingEnvironmentVariableError
 from scan.project_logger import configure_logging, get_logger
-from scan.roles import REPORT_ORDER
+from scan.report import REPORT_SECTIONS
 from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from crewai import Task
     from crewai.crews.crew_output import CrewOutput
 
@@ -22,11 +25,7 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
-#: Report section title -> the task whose output fills it. Derived from scan.roles so a heading
-#: can never drift from the agent that actually produced the section.
-REPORT_SECTIONS: tuple[tuple[str, str], ...] = tuple(
-    (f"{role.section_title} ({role.name})", role.task_name) for role in REPORT_ORDER
-)
+__all__ = ["REPORT_SECTIONS", "CustomCrew", "main"]
 
 
 class CustomCrew:
@@ -78,8 +77,7 @@ class CustomCrew:
                 f"({usage.prompt_tokens} prompt, {usage.completion_tokens} completion)"
             )
 
-        task_outputs = self.get_task_outputs(crew_output)
-        return self.combine_outputs(task_outputs)
+        return self.combine_outputs(self.get_task_outputs(crew_output))
 
     def get_task_outputs(self, crew_output: CrewOutput) -> dict[str, Any]:
         """Retrieve and process outputs from each task in the crew."""
@@ -96,17 +94,19 @@ class CustomCrew:
                 logger.warning(f"No output found for task: {task_name}")
         return task_outputs
 
-    def combine_outputs(self, task_outputs: dict[str, str]) -> str:
+    def combine_outputs(self, task_outputs: Mapping[str, str]) -> str:
         """Combine outputs from all tasks into a final report."""
-        missing = [name for _, name in REPORT_SECTIONS if not task_outputs.get(name)]
-        if missing:
-            logger.warning(f"Report is missing output for: {', '.join(missing)}")
+        return report.build(self.topic, task_outputs)
 
-        final_report = f"## SCAN AI Final Report on: {self.topic}\n\n"
-        for title, task_name in REPORT_SECTIONS:
-            content = task_outputs.get(task_name) or "_No output was produced for this section._"
-            final_report += f"### {title}\n{content}\n\n"
-        return final_report
+
+def prompt_for_topic() -> str:
+    """Ask for the topic interactively.
+
+    The prompt is printed to stderr rather than passed to ``input()``, which writes its prompt
+    argument to *stdout* -- that put "Please enter the topic..." inside any redirected report.
+    """
+    console.print("Please enter the topic you need help with: ", end="")
+    return input().strip()
 
 
 def main() -> None:
@@ -117,7 +117,7 @@ def main() -> None:
     try:
         if not default_settings.OPENAI_API_KEY:
             raise MissingEnvironmentVariableError("OPENAI_API_KEY")
-        topic = input("Please enter the topic you need help with: ").strip()
+        topic = prompt_for_topic()
         if not topic:
             console.print("No topic was provided; nothing to analyse.")
             sys.exit(2)
@@ -127,10 +127,7 @@ def main() -> None:
         with console.status("Thinking..."):
             final_report = custom_crew.run()
 
-        console.print("\n\n########################")
-        console.print("## SCAN AI Operation Result:")
-        console.print("########################\n")
-        console.print(final_report)
+        report.emit(final_report)
     except MissingEnvironmentVariableError as e:
         logger.error(e)
         console.print(str(e))

@@ -5,6 +5,8 @@ in pyproject was never executed by a test, so a broken entry point would have sh
 These run the real thing in a subprocess.
 """
 
+import pathlib
+import re
 import subprocess
 import sys
 
@@ -53,3 +55,28 @@ def test_dry_run_writes_nothing_to_stdout(monkeypatch):
     assert result.returncode == 0
     assert result.stdout == ""
     assert "no API calls were made" in result.stderr
+
+
+def _pyproject():
+    if sys.version_info >= (3, 11):
+        import tomllib
+    else:
+        import tomli as tomllib  # pragma: no cover
+    return tomllib.loads(
+        pathlib.Path(__file__).parent.parent.joinpath("pyproject.toml").read_text()
+    )
+
+
+def test_pyproject_declares_its_runtime_dependencies():
+    # Regression: a [project.urls] table was once inserted above the `dependencies` key, which
+    # in TOML moved `dependencies` *into* that table. [project] then declared none, uv locked
+    # nothing, and the built wheel would have installed with no dependencies at all.
+    project = _pyproject()["project"]
+
+    assert "dependencies" not in project.get("urls", {})
+    names = {re.split(r"[=<>!~\[]", spec)[0] for spec in project["dependencies"]}
+    assert {"crewai", "pydantic", "pydantic-settings", "rich", "langchain"} <= names
+
+
+def test_the_declared_version_matches_the_package():
+    assert _pyproject()["project"]["version"] == __version__

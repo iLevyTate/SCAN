@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scan"
-dynamic = ["version"]
+version = "0.1.0"
 # 3.13 is blocked by the pinned stack, not by SCAN: crewai 0.76.9 resolves numpy 1.26.4, which
 # has no cp313 wheels.
 requires-python = ">=3.10,<3.13"
@@ -28,14 +28,6 @@ classifiers = [
   "Typing :: Typed",
 ]
 
-[project.urls]
-Homepage = "https://github.com/iLevyTate/SCAN"
-Repository = "https://github.com/iLevyTate/SCAN"
-Issues = "https://github.com/iLevyTate/SCAN/issues"
-Zenodo = "https://doi.org/10.5281/zenodo.14052884"
-
-[tool.hatch.version]
-path = "scan/__init__.py"
 dependencies = [
   "crewai==0.76.9",
   "google-search-results==2.4.2",
@@ -47,6 +39,14 @@ dependencies = [
   "pydantic-settings==2.6.1",
   "rich==13.9.4",
 ]
+
+# Keep [project.urls] and every other sub-table below all bare [project] keys: a key placed
+# after a sub-table header belongs to that table, not to [project].
+[project.urls]
+Homepage = "https://github.com/iLevyTate/SCAN"
+Repository = "https://github.com/iLevyTate/SCAN"
+Issues = "https://github.com/iLevyTate/SCAN/issues"
+Zenodo = "https://doi.org/10.5281/zenodo.14052884"
 
 [dependency-groups]
 dev = [

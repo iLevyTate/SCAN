@@ -1,6 +1,7 @@
 import pytest
 
 from scan.config import settings
+from scan.errors import ConfigurationError, MissingEnvironmentVariableError
 from scan.tools.search_tools import SearchTools
 
 
@@ -20,5 +21,9 @@ def test_search_tool_uses_the_configured_key(monkeypatch):
 def test_search_tool_no_key(monkeypatch):
     monkeypatch.setattr(settings, "SERPAPI_API_KEY", None)
 
-    with pytest.raises(ValueError, match="SERPAPI_API_KEY"):
+    # Was a bare ValueError with its own message wording, for the same failure mode
+    # MissingEnvironmentVariableError already covers.
+    with pytest.raises(MissingEnvironmentVariableError, match="SERPAPI_API_KEY") as excinfo:
         SearchTools()
+
+    assert isinstance(excinfo.value, ConfigurationError)

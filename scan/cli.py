@@ -16,7 +16,7 @@ from scan import __version__, report
 from scan.config import Settings
 from scan.config import settings as default_settings
 from scan.console import console
-from scan.errors import MissingEnvironmentVariableError
+from scan.errors import ConfigurationError, MissingEnvironmentVariableError, ProviderError
 from scan.main import CustomCrew
 from scan.project_logger import configure_logging, get_logger
 from scan.roles import BY_NAME, BY_TASK_NAME, ROLES
@@ -36,6 +36,8 @@ LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 EXIT_OK = 0
 EXIT_ERROR = 1
 EXIT_NO_TOPIC = 2
+EXIT_CONFIG = 3
+EXIT_PROVIDER = 4
 EXIT_INTERRUPTED = 130
 
 
@@ -50,7 +52,8 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=(
             "Run with no arguments to be prompted for a topic. "
             f"Exit codes: {EXIT_OK} success, {EXIT_ERROR} error, "
-            f"{EXIT_NO_TOPIC} no topic supplied, {EXIT_INTERRUPTED} interrupted."
+            f"{EXIT_NO_TOPIC} no topic supplied, {EXIT_CONFIG} misconfigured, "
+            f"{EXIT_PROVIDER} provider failure, {EXIT_INTERRUPTED} interrupted."
         ),
     )
     parser.add_argument(
@@ -172,7 +175,7 @@ def describe_plan(topic: str, settings: Settings) -> None:
         role = task.agent.role
         console.print(
             f"\n--- [{index}/{len(ROLES)}] {role} "
-            f"({getattr(settings, BY_NAME[role].model_setting)}) ---"  # type: ignore[index]
+            f"({getattr(settings, BY_NAME[role].model_setting)}) ---"
         )
         console.print(task.description)
         console.print(f"Expected output: {task.expected_output}")
@@ -268,10 +271,15 @@ def main(argv: Sequence[str] | None = None) -> None:
                 deliver(custom_crew.partial_report(), args.output)
             raise
         deliver(final_report, args.output)
-    except MissingEnvironmentVariableError as e:
+    except ConfigurationError as e:
+        # Something the user can fix in their .env or on the command line.
         logger.error(e)
         console.print(str(e))
-        sys.exit(EXIT_ERROR)
+        sys.exit(EXIT_CONFIG)
+    except ProviderError as e:
+        logger.error(e)
+        console.print(str(e))
+        sys.exit(EXIT_PROVIDER)
     except EOFError:
         console.print("No topic supplied on stdin; run SCAN interactively or pipe a topic in.")
         sys.exit(EXIT_NO_TOPIC)

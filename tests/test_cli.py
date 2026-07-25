@@ -221,7 +221,7 @@ def test_missing_api_key_still_fails_a_real_run(monkeypatch, stub_crew, capsys):
     with pytest.raises(SystemExit) as excinfo:
         cli.main([TOPIC])
 
-    assert excinfo.value.code == cli.EXIT_ERROR
+    assert excinfo.value.code == cli.EXIT_CONFIG
     assert "OPENAI_API_KEY" in capsys.readouterr().err
 
 

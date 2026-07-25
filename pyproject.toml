@@ -1,14 +1,41 @@
 [build-system]
-requires = ["hatchling"]
+# >=1.27 is required for the bare SPDX `license` string below (PEP 639).
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
 name = "scan"
-version = "0.1.0"
+dynamic = ["version"]
+# 3.13 is blocked by the pinned stack, not by SCAN: crewai 0.76.9 resolves numpy 1.26.4, which
+# has no cp313 wheels.
 requires-python = ">=3.10,<3.13"
-description = "This project aims to develop a sophisticated multi-agent system that replicates the functions of the prefrontal cortex (PFC) using AI agents."
-authors = [ { name = "Ben Kennedy", email = "benjaminjoelkennedy@gmail.com" } ]
+description = "A multi-agent system that models prefrontal-cortex function to help reason about a decision."
+readme = "README.md"
+authors = [ { name = "iLevyTate" } ]
 license = "MIT"
+keywords = ["multi-agent", "llm", "crewai", "prefrontal-cortex", "decision-making", "cognitive-science"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/iLevyTate/SCAN"
+Repository = "https://github.com/iLevyTate/SCAN"
+Issues = "https://github.com/iLevyTate/SCAN/issues"
+Zenodo = "https://doi.org/10.5281/zenodo.14052884"
+
+[tool.hatch.version]
+path = "scan/__init__.py"
 dependencies = [
   "crewai==0.76.9",
   "google-search-results==2.4.2",
@@ -34,12 +61,15 @@ dev = [
 run-scan = "scan.cli:main"
 
 [tool.mypy]
-check_untyped_defs = true
-disallow_untyped_defs = true
+strict = true
+warn_unreachable = true
+# Pin the target version: CI lints on 3.10 (the floor), but a developer's venv may be newer.
+python_version = "3.10"
 
 [[tool.mypy.overrides]]
 module = ["tests.*"]
 disallow_untyped_defs = false
+disallow_untyped_calls = false
 
 [[tool.mypy.overrides]]
 module = ["crewai.*"]
@@ -74,19 +104,11 @@ select = [
   "T203",  # pprint found
 ]
 ignore = [
+  # Formatter conflicts. D/Q/COM/ISC entries used to be listed here too, but none of those
+  # rule families is selected, so they were suppressing rules that never ran.
   "E501",
   "W191",
   "E111",
   "E114",
   "E117",
-  "D206",
-  "D300",
-  "Q000",
-  "Q001",
-  "Q002",
-  "Q003",
-  "COM812",
-  "COM819",
-  "ISC001",
-  "ISC002",
 ]

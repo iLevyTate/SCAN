@@ -13,6 +13,7 @@ from scan import report
 from scan.config import apply_environment
 from scan.config import settings as default_settings
 from scan.project_logger import get_logger
+from scan.provider_errors import translate
 from scan.report import REPORT_SECTIONS
 from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
@@ -94,7 +95,15 @@ class CustomCrew:
         )
 
         logger.info("Starting crew execution...")
-        crew_output = crew.kickoff()
+        try:
+            crew_output = crew.kickoff()
+        except Exception as error:
+            # Translate at the boundary so a mistyped model or a rejected key reads as
+            # something the user can act on, not as a raw provider message.
+            translated = translate(error, self.settings)
+            if translated is error:
+                raise
+            raise translated from error
         logger.info("Crew execution completed.")
 
         # crewai declares token_usage as UsageMetrics but defaults it to a bare dict, so this

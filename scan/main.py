@@ -1,16 +1,18 @@
+"""Crew orchestration: turning a topic into a finished report.
+
+The command-line interface lives in :mod:`scan.cli`.
+"""
+
 from __future__ import annotations
 
-import sys
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from crewai import Crew, Process
 
 from scan import report
 from scan.config import apply_environment
 from scan.config import settings as default_settings
-from scan.console import console
-from scan.errors import MissingEnvironmentVariableError
-from scan.project_logger import configure_logging, get_logger
+from scan.project_logger import get_logger
 from scan.report import REPORT_SECTIONS
 from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
@@ -25,7 +27,7 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
-__all__ = ["REPORT_SECTIONS", "CustomCrew", "main"]
+__all__ = ["REPORT_SECTIONS", "CustomCrew"]
 
 
 class CustomCrew:
@@ -79,7 +81,7 @@ class CustomCrew:
 
         return self.combine_outputs(self.get_task_outputs(crew_output))
 
-    def get_task_outputs(self, crew_output: CrewOutput) -> dict[str, Any]:
+    def get_task_outputs(self, crew_output: CrewOutput) -> dict[str, str]:
         """Retrieve and process outputs from each task in the crew."""
         task_outputs = {}
         for task_result in crew_output.tasks_output:
@@ -97,54 +99,3 @@ class CustomCrew:
     def combine_outputs(self, task_outputs: Mapping[str, str]) -> str:
         """Combine outputs from all tasks into a final report."""
         return report.build(self.topic, task_outputs)
-
-
-def prompt_for_topic() -> str:
-    """Ask for the topic interactively.
-
-    The prompt is printed to stderr rather than passed to ``input()``, which writes its prompt
-    argument to *stdout* -- that put "Please enter the topic..." inside any redirected report.
-    """
-    console.print("Please enter the topic you need help with: ", end="")
-    return input().strip()
-
-
-def main() -> None:
-    """Main entry point for the SCAN system."""
-    configure_logging()
-    console.print("## Welcome to the SCAN System")
-    console.print("---------------------------------------------------------------")
-    try:
-        if not default_settings.OPENAI_API_KEY:
-            raise MissingEnvironmentVariableError("OPENAI_API_KEY")
-        topic = prompt_for_topic()
-        if not topic:
-            console.print("No topic was provided; nothing to analyse.")
-            sys.exit(2)
-        console.print(f"You entered: {topic}")
-
-        custom_crew = CustomCrew(topic=topic)
-        with console.status("Thinking..."):
-            final_report = custom_crew.run()
-
-        report.emit(final_report)
-    except MissingEnvironmentVariableError as e:
-        logger.error(e)
-        console.print(str(e))
-        sys.exit(1)
-    except EOFError:
-        console.print("No topic supplied on stdin; run SCAN interactively or pipe a topic in.")
-        sys.exit(2)
-    except KeyboardInterrupt:
-        logger.info("Execution interrupted by user.")
-        console.print("Execution interrupted by user.")
-        sys.exit(130)
-    except Exception as e:
-        logger.exception("An unexpected error occurred")
-        console.print(f"An unexpected error occurred: {e}")
-        sys.exit(1)
-    console.print("Thank you for using the SCAN System. Have a great day!")
-
-
-if __name__ == "__main__":
-    main()

@@ -4,7 +4,6 @@ from crewai.crews.crew_output import CrewOutput, TaskOutput
 
 from scan import main as main_module
 from scan import report
-from scan.config import settings
 from scan.main import REPORT_SECTIONS, CustomCrew
 from scan.roles import BY_TASK_NAME, execution_order
 
@@ -128,99 +127,3 @@ def test_run_propagates_failures(monkeypatch):
 
     with pytest.raises(RuntimeError, match="kickoff exploded"):
         CustomCrew("Some topic").run()
-
-
-def test_main_reports_missing_openai_key(monkeypatch, capsys):
-    # Regression: the friendly MissingEnvironmentVariableError path was dead because the
-    # error was caught but never raised.
-    monkeypatch.setattr(settings, "OPENAI_API_KEY", None)
-
-    with pytest.raises(SystemExit) as excinfo:
-        main_module.main()
-
-    assert excinfo.value.code == 1
-    assert "OPENAI_API_KEY" in capsys.readouterr().err
-
-
-def test_main_exits_non_zero_when_the_crew_fails(monkeypatch, capsys):
-    monkeypatch.setattr("builtins.input", lambda: "a topic")
-
-    class ExplodingCrew:
-        def __init__(self, topic):
-            pass
-
-        def run(self):
-            raise RuntimeError("boom")
-
-    monkeypatch.setattr(main_module, "CustomCrew", ExplodingCrew)
-
-    with pytest.raises(SystemExit) as excinfo:
-        main_module.main()
-
-    assert excinfo.value.code == 1
-    assert "An unexpected error occurred" in capsys.readouterr().err
-
-
-def test_main_rejects_an_empty_topic(monkeypatch, capsys):
-    monkeypatch.setattr("builtins.input", lambda: "   ")
-
-    with pytest.raises(SystemExit) as excinfo:
-        main_module.main()
-
-    assert excinfo.value.code == 2
-    assert "No topic was provided" in capsys.readouterr().err
-
-
-def test_main_handles_no_stdin(monkeypatch, capsys):
-    def raise_eof():
-        raise EOFError
-
-    monkeypatch.setattr("builtins.input", raise_eof)
-
-    with pytest.raises(SystemExit) as excinfo:
-        main_module.main()
-
-    assert excinfo.value.code == 2
-    assert "No topic supplied on stdin" in capsys.readouterr().err
-
-
-def test_main_reports_interruption(monkeypatch, capsys):
-    def raise_interrupt():
-        raise KeyboardInterrupt
-
-    monkeypatch.setattr("builtins.input", raise_interrupt)
-
-    with pytest.raises(SystemExit) as excinfo:
-        main_module.main()
-
-    assert excinfo.value.code == 130
-    assert "interrupted by user" in capsys.readouterr().err
-
-
-def test_main_separates_the_report_from_the_chrome(monkeypatch, capsys):
-    # The whole point of the stream split: `run-scan > report.md` must capture the report and
-    # nothing else. Banner, echo, sign-off -- and input()'s own prompt, which it writes to
-    # stdout unless we print it ourselves -- all belong on stderr.
-    monkeypatch.setattr("builtins.input", lambda: "a topic")
-
-    class StubCrew:
-        def __init__(self, topic):
-            self.topic = topic
-
-        def run(self):
-            return "## report body"
-
-    monkeypatch.setattr(main_module, "CustomCrew", StubCrew)
-
-    main_module.main()
-
-    captured = capsys.readouterr()
-    assert captured.out == "## report body\n"
-    for chrome in (
-        "Welcome to the SCAN System",
-        "Please enter the topic",
-        "You entered: a topic",
-        "Thank you for using the SCAN System",
-    ):
-        assert chrome in captured.err
-        assert chrome not in captured.out

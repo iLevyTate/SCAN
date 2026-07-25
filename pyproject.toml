@@ -31,7 +31,7 @@ dev = [
 ]
 
 [project.scripts]
-run-scan = "scan.main:main"
+run-scan = "scan.cli:main"
 
 [tool.mypy]
 check_untyped_defs = true

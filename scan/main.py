@@ -18,10 +18,11 @@ from scan.scan_agents import PFCAgents
 from scan.scan_tasks import PFCTasks
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Callable, Mapping
 
     from crewai import Task
     from crewai.crews.crew_output import CrewOutput
+    from crewai.tasks.task_output import TaskOutput
 
     from scan.config import Settings
 
@@ -39,20 +40,48 @@ class CustomCrew:
         apply_environment(self.settings)
         self.agents = PFCAgents(topic=self.topic, settings=self.settings)
         self.tasks = PFCTasks(agents=self.agents)
+        #: Outputs of the tasks that have finished, accumulated as they land so a failure
+        #: part-way through still leaves the completed analyses recoverable.
+        self.completed: dict[str, str] = {}
 
     def build_tasks(self) -> list[Task]:
         """Build the task list, wiring dependencies through crewai's `context`."""
         return self.tasks.build_all(self.topic)
 
-    def run(self) -> str:
+    def partial_report(self) -> str:
+        """Render whatever finished before the run stopped."""
+        return report.build(self.topic, self.completed, partial=True)
+
+    def _on_task_complete(
+        self, on_task_complete: Callable[[TaskOutput], None] | None
+    ) -> Callable[[TaskOutput], None]:
+        """Wrap the caller's progress callback so display can never fail a paid run."""
+
+        def callback(output: TaskOutput) -> None:
+            if output.name and output.raw:
+                self.completed[output.name] = output.raw
+            if on_task_complete is None:
+                return
+            try:
+                # crewai invokes this inline (crewai/task.py), so an exception raised here
+                # aborts the whole crew after minutes of work.
+                on_task_complete(output)
+            except Exception:
+                logger.debug("Progress callback failed", exc_info=True)
+
+        return callback
+
+    def run(self, on_task_complete: Callable[[TaskOutput], None] | None = None) -> str:
         """Execute all tasks and return the final report.
 
         Raises whatever the crew raises: the caller decides how to report it and what to exit
-        with. Swallowing exceptions here meant a totally failed run still exited 0.
+        with. Swallowing exceptions here meant a totally failed run still exited 0. Anything
+        that finished before the failure is left in :attr:`completed`.
         """
         crew = Crew(
             agents=self.agents.get_all_agents(),
             tasks=self.build_tasks(),
+            task_callback=self._on_task_complete(on_task_complete),
             # Sequential, not hierarchical. Under Process.hierarchical crewai routes *every*
             # task to an auto-created generic "Crew Manager" agent (Crew._get_agent_to_use
             # ignores task.agent), so the five PFC agents, their goals/backstories, their

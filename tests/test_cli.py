@@ -1,8 +1,10 @@
+from types import SimpleNamespace
+
 import pytest
 
-from scan import __version__, cli
+from scan import __version__, cli, report
 from scan.config import settings
-from scan.roles import ROLES
+from scan.roles import BY_TASK_NAME, ROLES, execution_order
 
 TOPIC = "adopting a rescue dog"
 
@@ -25,8 +27,15 @@ class StubCrew:
     def __init__(self, topic, settings=None):
         self.topic = topic
         self.settings = settings
+        self.completed = {}
 
-    def run(self):
+    def build_tasks(self):
+        return [SimpleNamespace(name=role.task_name) for role in execution_order()]
+
+    def partial_report(self):
+        return report.build(self.topic, self.completed, partial=True)
+
+    def run(self, on_task_complete=None):
         return self.report
 
 
@@ -218,7 +227,7 @@ def test_missing_api_key_still_fails_a_real_run(monkeypatch, stub_crew, capsys):
 
 def test_crew_failure_exits_non_zero(monkeypatch, capsys):
     class ExplodingCrew(StubCrew):
-        def run(self):
+        def run(self, on_task_complete=None):
             raise RuntimeError("boom")
 
     monkeypatch.setattr(cli, "CustomCrew", ExplodingCrew)
@@ -226,8 +235,9 @@ def test_crew_failure_exits_non_zero(monkeypatch, capsys):
     with pytest.raises(SystemExit) as excinfo:
         cli.main([TOPIC])
 
+    captured = capsys.readouterr()
     assert excinfo.value.code == cli.EXIT_ERROR
-    assert "An unexpected error occurred" in capsys.readouterr().err
+    assert "An unexpected error occurred: boom" in captured.err
 
 
 def test_no_stdin_is_reported_clearly(monkeypatch, stub_crew, capsys):
@@ -254,3 +264,91 @@ def test_interruption_uses_the_conventional_exit_code(monkeypatch, stub_crew, ca
 
     assert excinfo.value.code == cli.EXIT_INTERRUPTED
     assert "interrupted by user" in capsys.readouterr().err
+
+
+def _task_output(task_name, raw="body"):
+    return SimpleNamespace(name=task_name, raw=raw)
+
+
+def test_progress_is_reported_per_task_in_execution_order(monkeypatch, capsys):
+    # Regression: one "Thinking..." spinner covered the whole multi-minute run, so a user
+    # could not tell progress from a hang.
+    order = [role.task_name for role in execution_order()]
+
+    class ReportingCrew(StubCrew):
+        def run(self, on_task_complete=None):
+            for name in order:
+                on_task_complete(_task_output(name))
+            return self.report
+
+    monkeypatch.setattr(cli, "CustomCrew", ReportingCrew)
+
+    cli.main([TOPIC])
+
+    err = capsys.readouterr().err
+    lines = [line for line in err.splitlines() if " - done (" in line]
+    assert len(lines) == len(order)
+    for index, task_name in enumerate(order, start=1):
+        role = BY_TASK_NAME[task_name]
+        assert lines[index - 1].startswith(f"[{index}/{len(order)}] {role.section_title}")
+
+
+def test_progress_labels_never_use_report_order():
+    # Execution order and report order genuinely differ: the synthesis runs last but is
+    # reported first. Keying progress off the report order would mislabel every line.
+    assert [r.task_name for r in execution_order()] != [name for _, name in report.REPORT_SECTIONS]
+
+
+def test_a_failing_callback_cannot_kill_the_run(monkeypatch, capsys):
+    # crewai invokes the callback inline, so a display bug must not discard a paid-for run.
+    from scan.main import CustomCrew as RealCrew
+
+    crew = RealCrew(TOPIC)
+
+    def explode(_output):
+        raise RuntimeError("display bug")
+
+    crew._on_task_complete(explode)(_task_output("emotional_risk_assessment_task"))
+
+    assert crew.completed["emotional_risk_assessment_task"] == "body"
+
+
+def test_partial_report_is_written_when_the_run_fails(monkeypatch, capsys):
+    # Regression: a failure on the last analysis discarded the four that had already been
+    # paid for, and the user got a single line of error text.
+    done = [role.task_name for role in execution_order()][:4]
+
+    class FailingCrew(StubCrew):
+        def run(self, on_task_complete=None):
+            for name in done:
+                self.completed[name] = f"Body of {name}"
+                on_task_complete(_task_output(name))
+            raise RuntimeError("the fifth analysis failed")
+
+    monkeypatch.setattr(cli, "CustomCrew", FailingCrew)
+
+    with pytest.raises(SystemExit) as excinfo:
+        cli.main([TOPIC])
+
+    captured = capsys.readouterr()
+    assert excinfo.value.code == cli.EXIT_ERROR
+    assert "Incomplete report." in captured.out
+    for task_name in done:
+        assert f"Body of {task_name}" in captured.out
+    assert captured.out.count(report.MISSING_SECTION) == 1
+    assert "writing a partial report" in captured.err
+
+
+def test_no_partial_report_when_nothing_completed(monkeypatch, capsys):
+    class FailingCrew(StubCrew):
+        def run(self, on_task_complete=None):
+            raise RuntimeError("failed immediately")
+
+    monkeypatch.setattr(cli, "CustomCrew", FailingCrew)
+
+    with pytest.raises(SystemExit):
+        cli.main([TOPIC])
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "partial report" not in captured.err

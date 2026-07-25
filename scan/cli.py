@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -18,10 +19,13 @@ from scan.console import console
 from scan.errors import MissingEnvironmentVariableError
 from scan.main import CustomCrew
 from scan.project_logger import configure_logging, get_logger
-from scan.roles import BY_NAME, ROLES
+from scan.roles import BY_NAME, BY_TASK_NAME, ROLES
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
+
+    from crewai import Task
+    from crewai.tasks.task_output import TaskOutput
 
 logger = get_logger(__name__)
 
@@ -174,6 +178,39 @@ def describe_plan(topic: str, settings: Settings) -> None:
         console.print(f"Expected output: {task.expected_output}")
 
 
+class ProgressReporter:
+    """Reports each analysis to stderr as it lands.
+
+    Keyed off the task list in execution order, never off the report order -- the two differ,
+    because the synthesis runs last but is reported first.
+    """
+
+    def __init__(self, tasks: Sequence[Task], clock: Callable[[], float] = time.monotonic):
+        self._labels = [task.name or "task" for task in tasks]
+        self._clock = clock
+        self._started = clock()
+        self._done = 0
+
+    @property
+    def next_label(self) -> str:
+        role = BY_TASK_NAME.get(self._labels[self._done]) if self._done < self.total else None
+        return f"{role.section_title} ({role.name})" if role else "Working"
+
+    @property
+    def total(self) -> int:
+        return len(self._labels)
+
+    def status_line(self) -> str:
+        return f"[{self._done + 1}/{self.total}] {self.next_label}..."
+
+    def on_task_complete(self, output: TaskOutput) -> None:
+        role = BY_TASK_NAME.get(output.name or "")
+        label = f"{role.section_title} ({role.name})" if role else (output.name or "task")
+        self._done += 1
+        elapsed = self._clock() - self._started
+        console.print(f"[{self._done}/{self.total}] {label} - done ({elapsed:.0f}s)")
+
+
 def deliver(text: str, output: Path | None) -> None:
     """Send the finished report to its destination."""
     if output is None:
@@ -211,8 +248,25 @@ def main(argv: Sequence[str] | None = None) -> None:
             return
 
         custom_crew = CustomCrew(topic=topic, settings=settings)
-        with console.status("Thinking..."):
-            final_report = custom_crew.run()
+        progress = ProgressReporter(custom_crew.build_tasks())
+        try:
+            with console.status(progress.status_line()) as status:
+
+                def advance(output: TaskOutput) -> None:
+                    progress.on_task_complete(output)
+                    status.update(progress.status_line())
+
+                final_report = custom_crew.run(on_task_complete=advance)
+        except Exception:
+            # Emit whatever finished before re-raising: the user has already paid for it,
+            # and until now a failure on the last analysis discarded all of the earlier ones.
+            if custom_crew.completed:
+                console.print(
+                    f"Run failed after {len(custom_crew.completed)} of "
+                    f"{len(ROLES)} analyses; writing a partial report."
+                )
+                deliver(custom_crew.partial_report(), args.output)
+            raise
         deliver(final_report, args.output)
     except MissingEnvironmentVariableError as e:
         logger.error(e)

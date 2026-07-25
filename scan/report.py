@@ -29,13 +29,23 @@ REPORT_SECTIONS: tuple[tuple[str, str], ...] = tuple(
 )
 
 
-def build(topic: str, outputs: Mapping[str, str]) -> str:
-    """Assemble the markdown report from the per-task outputs."""
+def build(topic: str, outputs: Mapping[str, str], *, partial: bool = False) -> str:
+    """Assemble the markdown report from the per-task outputs.
+
+    ``partial`` marks the document itself as incomplete. A banner in the text survives being
+    redirected to a file, where an exit code does not.
+    """
     missing = [name for _, name in REPORT_SECTIONS if not outputs.get(name)]
     if missing:
         logger.warning(f"Report is missing output for: {', '.join(missing)}")
 
     report = f"## SCAN AI Final Report on: {topic}\n\n"
+    if partial or missing:
+        finished = len(REPORT_SECTIONS) - len(missing)
+        report += (
+            f"> **Incomplete report.** {finished} of {len(REPORT_SECTIONS)} analyses "
+            "finished; the rest are marked below.\n\n"
+        )
     for title, task_name in REPORT_SECTIONS:
         report += f"### {title}\n{outputs.get(task_name) or MISSING_SECTION}\n\n"
     return report

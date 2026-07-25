@@ -3,10 +3,14 @@
 Each region owns exactly one agent and exactly one task, so one table describes both. Everything
 else in the package derives from ``ROLES``: the agent personas (:mod:`scan.scan_agents`), the crew
 tasks and their dependency wiring (:mod:`scan.scan_tasks`), the execution order and the report
-layout (:mod:`scan.main`).
+layout (:mod:`scan.report`).
 
 Adding a region means adding one :class:`PFCRole` here plus its ``*_MODEL`` field in
 :class:`scan.config.Settings`; a test asserts those two stay in step.
+
+The briefs below are deliberately region-specific. Five prompts that all said "conduct a thorough
+analysis" produced five interchangeable essays, which defeats the point of modelling distinct
+regions at all: each one now asks for the kind of reasoning its region actually does.
 """
 
 from __future__ import annotations
@@ -22,6 +26,34 @@ RoleName: TypeAlias = Literal["DLPFC", "VMPFC", "OFC", "ACC", "MPFC"]
 
 
 @dataclass(frozen=True, slots=True)
+class OutputContract:
+    """What a task must return.
+
+    Rendered into ``Task.expected_output`` and nowhere else. crewai injects that field into the
+    prompt itself, so the old "Expected Output:" block inside each description handed the model
+    two competing specifications of the same deliverable, worded differently.
+
+    The word budget is the only length instruction in the system. Descriptions used to ask for
+    "comprehensive" and "thorough" output while the agent goals asked for "concise" -- a direct
+    contradiction that made length a lottery, with MAX_TOKENS as the only real bound.
+    """
+
+    summary: str
+    sections: tuple[str, ...]
+    min_words: int
+    max_words: int
+
+    def render(self) -> str:
+        labels = ", ".join(f"**{section}**" for section in self.sections)
+        return (
+            f"{self.summary} Use exactly these bold subsection labels, in this order: {labels}. "
+            f"Write {self.min_words}-{self.max_words} words in total. Do not open with a title "
+            "or heading -- the caller adds one. Do not restate the task or quote the supplied "
+            "context back at length."
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class PFCRole:
     """One prefrontal-cortex region: its agent persona and the task it performs."""
 
@@ -30,7 +62,7 @@ class PFCRole:
     #: lazily via ``getattr(settings, role.model_setting)``, because callers (and tests) override
     #: settings after import.
     model_setting: str
-    #: Completes "You are the {name}, focusing on {focus} for the topic '{topic}'."
+    #: Completes "You contribute {focus}".
     focus: str
     goal: str
     #: Report heading, rendered as "{section_title} ({name})".
@@ -38,17 +70,26 @@ class PFCRole:
     #: Position in the report, which is not the order tasks execute in.
     report_order: int
     task_name: str
-    task_intro: str
-    task_actions: tuple[str, ...]
-    task_expectation: str
-    expected_output: str
+    #: Opening sentence of the task description.
+    mandate: str
+    #: The analysis moves this region performs. These are what make the five prompts different.
+    steps: tuple[str, ...]
+    contract: OutputContract
     #: ``task_name``s whose output is fed to this task as crewai ``context``.
     depends_on: tuple[str, ...] = ()
+    #: The integrating region, promoted to the top of the report.
+    is_summary: bool = False
+
+    @property
+    def expected_output(self) -> str:
+        return self.contract.render()
 
     def backstory(self, topic: str) -> str:
         return (
-            f"You are the {self.name}, focusing on {self.focus} for the topic '{topic}'.\n"
-            "Please ensure you follow the task instructions precisely and provide concise responses."
+            f"You are the {self.name}, a region of the prefrontal cortex. You contribute "
+            f"{self.focus} to the decision about '{topic}'. Stay in your role: the other "
+            "regions cover the other angles, and their analyses are supplied to you where "
+            "they are relevant. Follow the output contract exactly."
         )
 
     def context_legend(self) -> str:
@@ -75,17 +116,14 @@ class PFCRole:
 
     def description(self, topic: str) -> str:
         """Render the crewai task description for this role."""
-        actions = "\n".join(f"- {action.format(topic=topic)}" for action in self.task_actions)
-        parts = [
-            self.task_intro.format(topic=topic),
-            "Actions Required:",
-            actions,
-            "Expected Output:",
-            self.task_expectation.format(topic=topic),
-        ]
+        steps = "\n".join(
+            f"{index}. {step.format(topic=topic)}" for index, step in enumerate(self.steps, 1)
+        )
+        parts = [self.mandate.format(topic=topic)]
         legend = self.context_legend()
         if legend:
-            parts.insert(1, legend)
+            parts.append(legend)
+        parts += ["Work through this:", steps]
         return "\n".join(parts)
 
 
@@ -99,53 +137,64 @@ ROLES: tuple[PFCRole, ...] = (
     PFCRole(
         name="VMPFC",
         model_setting="VMPFC_MODEL",
-        focus="assessing emotional outcomes and risks",
+        focus="affective forecasting -- how each option will actually feel to live with",
         goal=(
-            "Provide emotional insights to aid in decision-making.\n"
-            "Assess emotional factors thoroughly and concisely."
+            "Surface the emotional stakes a purely analytical account would miss.\n"
+            "Separate discomfort that tracks a real risk from discomfort that tracks "
+            "unfamiliarity."
         ),
         section_title="Emotional analysis",
         report_order=1,
         task_name="emotional_risk_assessment_task",
-        task_intro="Evaluate decisions involving high emotional impact related to '{topic}'.",
-        task_actions=(
-            "Identify the emotional and psychological factors at play in decisions about '{topic}'.",
-            "Assess the potential risks associated with these emotional factors.",
-            "Recommend strategies to mitigate risks while addressing emotional concerns.",
+        mandate=(
+            "Assess how the options around '{topic}' would feel to live with, not just how "
+            "they score."
         ),
-        task_expectation=(
-            "A balanced evaluation report detailing emotional factors, associated risks, "
-            "and mitigation strategies for '{topic}'."
+        steps=(
+            "Say what is actually at stake emotionally here, in plain language.",
+            "Describe how each option would feel the morning after committing to it.",
+            "Separate the apprehension that is tracking a genuine risk from the apprehension "
+            "that is only tracking unfamiliarity, and say how you can tell which is which in "
+            "this case.",
+            "Name the one outcome that would be hardest to live with five years from now.",
         ),
-        expected_output=(
-            "An evaluation report with balanced insights into emotional and rational aspects."
+        contract=OutputContract(
+            summary="An account of the emotional stakes and where they are and are not reliable.",
+            sections=(
+                "Stakes",
+                "How each option would feel",
+                "Signal or noise",
+                "Hardest to live with",
+            ),
+            min_words=200,
+            max_words=350,
         ),
     ),
     PFCRole(
         name="OFC",
         model_setting="OFC_MODEL",
-        focus="balancing rewards against emotional risks",
+        focus="valuing the options against each other, and against time",
         goal=(
-            "Assess actions based on rewards and manage impulses effectively.\n"
-            "Provide a concise evaluation of potential rewards and risks."
+            "Rank the available options by expected value.\n"
+            "Make the time horizon explicit, and state what evidence would overturn the ranking."
         ),
         section_title="Reward evaluation",
         report_order=2,
         task_name="reward_evaluation_task",
-        task_intro=(
-            "Assess different actions or options based on potential rewards related to '{topic}'."
+        mandate="Value the options for '{topic}' against one another, across time.",
+        steps=(
+            "Enumerate two to four concrete options, including the option of doing nothing.",
+            "Score each option's expected value at one month, at one year, and at five years.",
+            "Identify where the ranking changes between those horizons, and say what drives "
+            "the change.",
+            "For your top-ranked option, state the specific observable signal that should make "
+            "you abandon it.",
         ),
-        task_actions=(
-            "Evaluate the potential rewards associated with each option concerning '{topic}'.",
-            "Consider long-term impacts and sustainability of the rewards.",
-            "Provide a ranked list of options based on the overall benefit analysis.",
-        ),
-        task_expectation=(
-            "A detailed assessment of options with a focus on long-term rewards and strategic "
-            "benefits related to '{topic}'."
-        ),
-        expected_output=(
-            "An assessment document ranking options by potential rewards and strategic value."
+        contract=OutputContract(
+            summary="A ranking of concrete options with the time horizon made explicit.",
+            sections=("Options", "Value by horizon", "Where the ranking flips", "Abandon signal"),
+            min_words=200,
+            max_words=350,
         ),
         # Already received VMPFC's output implicitly by running second; now it is declared
         # and labelled instead of arriving as an anonymous blob.
@@ -154,75 +203,109 @@ ROLES: tuple[PFCRole, ...] = (
     PFCRole(
         name="MPFC",
         model_setting="MPFC_MODEL",
-        focus="understanding social dynamics and self-reflection",
+        focus=(
+            "modelling how other people will read this decision, and whether it fits who the "
+            "decider takes themselves to be"
+        ),
         goal=(
-            "Analyze social interactions and provide insights for personal growth.\n"
-            "Focus on social cognition aspects relevant to the topic."
+            "Represent the people affected as they would represent themselves.\n"
+            "Surface where their view of this decision differs from the decider's."
         ),
         section_title="Social insights",
         report_order=4,
         task_name="social_cognition_task",
-        task_intro="Analyze and enhance social dynamics related to '{topic}'.",
-        task_actions=(
-            "Assess current social interactions and their impact on '{topic}'.",
-            "Identify areas for improvement in social interactions.",
-            "Propose interventions to enhance social cognition and personal growth.",
+        mandate="Work out how the people around '{topic}' will understand this decision.",
+        steps=(
+            "List everyone materially affected, and say how each one is affected.",
+            "Write one sentence in each person's own voice about this decision.",
+            "Name one belief each of them holds that the decider does not, and say what follows "
+            "if they turn out to be right.",
+            "Say whether this decision is consistent with the kind of person the decider takes "
+            "themselves to be.",
         ),
-        task_expectation="A strategic plan to improve social interactions related to '{topic}'.",
-        expected_output="A strategic plan with interventions for enhancing social cognition.",
+        contract=OutputContract(
+            summary="An account of how this decision reads to the people it touches.",
+            sections=(
+                "Who is affected",
+                "In their words",
+                "Where they disagree",
+                "Self-consistency",
+            ),
+            min_words=200,
+            max_words=350,
+        ),
         # Was silently receiving OFC's output alone; now both upstream analyses, labelled.
         depends_on=("emotional_risk_assessment_task", "reward_evaluation_task"),
     ),
     PFCRole(
         name="ACC",
         model_setting="ACC_MODEL",
-        focus="resolving conflicts between emotional, reward-based, and logical inputs",
+        focus="detecting where the other analyses genuinely disagree, and adjudicating between them",
         goal=(
-            "Resolve conflicts in the decision-making process.\n"
-            "Analyze conflicts carefully and provide clear resolution strategies."
+            "Find the real contradictions between the analyses supplied to you.\n"
+            "Decide which side should win, and state what would change that."
         ),
         section_title="Conflict resolution",
         report_order=3,
         task_name="conflict_resolution_task",
-        task_intro=(
-            "Resolve conflicts between emotional, reward-based, and logical inputs for '{topic}'."
+        mandate="Adjudicate the disagreements between the analyses of '{topic}' supplied to you.",
+        steps=(
+            "Quote the specific sentences from the analyses above that contradict each other. "
+            "Quote them; do not paraphrase.",
+            "Classify each conflict: a disagreement about values, about evidence, or about the "
+            "time horizon being used.",
+            "For each one, name which side should win. Do not split the difference.",
+            "State the fact that would have to be true for the other side to win instead.",
         ),
-        task_actions=(
-            "Identify sources of conflict within the context of '{topic}'.",
-            "Analyze the underlying causes of these conflicts.",
-            "Develop and implement conflict resolution strategies.",
+        contract=OutputContract(
+            summary="A resolution of the actual conflicts between the upstream analyses.",
+            sections=(
+                "Conflicts",
+                "What kind of disagreement",
+                "Which side wins",
+                "What would change it",
+            ),
+            min_words=200,
+            max_words=400,
         ),
-        task_expectation=(
-            "A conflict resolution report with actionable steps and outcomes for '{topic}'."
-        ),
-        expected_output="A report detailing conflict resolution strategies and outcomes.",
         depends_on=("emotional_risk_assessment_task", "reward_evaluation_task"),
     ),
     PFCRole(
         name="DLPFC",
         model_setting="DLPFC_MODEL",
-        focus="executive functions like planning and decision-making",
-        goal=(
-            "Make decisions based on integrated logical, emotional, and social perspectives.\n"
-            "Ensure you synthesize information effectively and provide strategic recommendations."
+        focus=(
+            "integrating the other regions' analyses into a decision, and keeping track of what "
+            "that decision rests on"
         ),
-        section_title="Decision-making analysis",
+        goal=(
+            "Reach a decision the other regions' analyses actually support.\n"
+            "Attribute your reasoning, and name what you are trading away to get it."
+        ),
+        section_title="Recommendation",
         report_order=0,
         task_name="complex_decision_making_task",
-        task_intro=(
-            "Analyze a complex situation involving '{topic}' by integrating insights from "
-            "other agents."
+        mandate="Decide what to do about '{topic}', using the analyses supplied to you.",
+        steps=(
+            "State the recommendation in one sentence.",
+            "Give the three reasons it rests on, attributing each to the region that raised it.",
+            "State the strongest argument against the recommendation, as fairly as you can, and "
+            "say why you are accepting that cost anyway.",
+            "Name the single largest thing you are still uncertain about.",
+            "Give one concrete action to take this week, and the observable check that would "
+            "tell you it is working.",
         ),
-        task_actions=(
-            "Conduct a thorough analysis of all available data on '{topic}'.",
-            "Synthesize information to identify key trends and insights.",
-            "Develop a set of recommendations based on analytical findings.",
+        contract=OutputContract(
+            summary="A decision, what it rests on, and what it costs.",
+            sections=(
+                "Recommendation",
+                "Why",
+                "Strongest case against",
+                "Biggest uncertainty",
+                "First step",
+            ),
+            min_words=250,
+            max_words=400,
         ),
-        task_expectation=(
-            "A comprehensive report that outlines the situation analysis, key findings, "
-            "and strategic recommendations on '{topic}'."
-        ),
-        expected_output="A comprehensive analytical report with strategic recommendations.",
         # DLPFC is the integrator, so it sees all four upstream analyses. It previously never
         # received the conflict resolution it is supposed to be integrating.
         depends_on=(
@@ -231,6 +314,7 @@ ROLES: tuple[PFCRole, ...] = (
             "social_cognition_task",
             "conflict_resolution_task",
         ),
+        is_summary=True,
     ),
 )
 
@@ -239,6 +323,9 @@ BY_TASK_NAME: Mapping[str, PFCRole] = MappingProxyType({role.task_name: role for
 
 #: Roles in the order their sections appear in the report, which differs from execution order.
 REPORT_ORDER: tuple[PFCRole, ...] = tuple(sorted(ROLES, key=lambda role: role.report_order))
+
+#: The integrating region, rendered as the report's opening summary.
+SUMMARY_ROLE: PFCRole = next(role for role in ROLES if role.is_summary)
 
 
 def get_role(name: str) -> PFCRole:

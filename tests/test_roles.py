@@ -59,11 +59,51 @@ def test_backstory_and_description_mention_the_topic(role):
 
 
 @pytest.mark.parametrize("role", ROLES, ids=lambda role: role.name)
-def test_description_renders_every_action(role):
+def test_description_renders_every_step(role):
     description = role.description("a topic")
 
-    for action in role.task_actions:
-        assert action.format(topic="a topic") in description
+    for step in role.steps:
+        assert step.format(topic="a topic") in description
+
+
+@pytest.mark.parametrize("role", ROLES, ids=lambda role: role.name)
+def test_description_does_not_restate_the_output_contract(role):
+    # Regression: every description ended with its own "Expected Output:" block *and* passed a
+    # differently-worded expected_output field. crewai injects that field into the prompt
+    # itself, so the model saw two competing specifications of the same deliverable.
+    assert "Expected Output" not in role.description("a topic")
+
+
+@pytest.mark.parametrize("role", ROLES, ids=lambda role: role.name)
+def test_the_output_contract_is_specific(role):
+    contract = role.contract
+    rendered = role.expected_output
+
+    assert len(contract.sections) >= 2
+    assert contract.min_words < contract.max_words
+    for section in contract.sections:
+        assert f"**{section}**" in rendered
+    assert f"{contract.min_words}-{contract.max_words} words" in rendered
+
+
+@pytest.mark.parametrize("role", ROLES, ids=lambda role: role.name)
+def test_no_contradictory_length_adjectives(role):
+    # Regression: tasks asked for "comprehensive"/"thorough"/"detailed" output while the agent
+    # goals asked for "concise" -- a direct contradiction that made output length a lottery.
+    # The word budget in the contract is now the only length instruction in the system.
+    banned = ("comprehensive", "thorough", "concise", "detailed", "in-depth", "exhaustive")
+    text = " ".join([role.goal, role.focus, role.mandate, *role.steps]).lower()
+
+    for word in banned:
+        assert word not in text, f"{role.name} still says {word!r}; use the word budget instead"
+
+
+def test_regions_ask_for_different_kinds_of_reasoning():
+    # The whole premise: five prompts that all said "conduct a thorough analysis" produced five
+    # interchangeable essays. Distinct steps and distinct output shapes are what prevent that.
+    all_steps = [step for role in ROLES for step in role.steps]
+    assert len(set(all_steps)) == len(all_steps)
+    assert len({role.contract.sections for role in ROLES}) == len(ROLES)
 
 
 def test_lookups_cover_every_role():

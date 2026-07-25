@@ -10,7 +10,7 @@ import sys
 from typing import TYPE_CHECKING
 
 from scan.project_logger import get_logger
-from scan.roles import REPORT_ORDER
+from scan.roles import REPORT_ORDER, SUMMARY_ROLE
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -32,6 +32,9 @@ REPORT_SECTIONS: tuple[tuple[str, str], ...] = tuple(
 def build(topic: str, outputs: Mapping[str, str], *, partial: bool = False) -> str:
     """Assemble the markdown report from the per-task outputs.
 
+    The integrating region leads as a summary rather than sitting among the others as an equal
+    peer: someone who reads only the first screen should come away with the recommendation.
+
     ``partial`` marks the document itself as incomplete. A banner in the text survives being
     redirected to a file, where an exit code does not.
     """
@@ -39,16 +42,34 @@ def build(topic: str, outputs: Mapping[str, str], *, partial: bool = False) -> s
     if missing:
         logger.warning(f"Report is missing output for: {', '.join(missing)}")
 
-    report = f"## SCAN AI Final Report on: {topic}\n\n"
+    lines = [f"# SCAN report: {topic}", ""]
     if partial or missing:
         finished = len(REPORT_SECTIONS) - len(missing)
-        report += (
+        lines += [
             f"> **Incomplete report.** {finished} of {len(REPORT_SECTIONS)} analyses "
-            "finished; the rest are marked below.\n\n"
-        )
-    for title, task_name in REPORT_SECTIONS:
-        report += f"### {title}\n{outputs.get(task_name) or MISSING_SECTION}\n\n"
-    return report
+            "finished; the rest are marked below.",
+            "",
+        ]
+
+    summary = SUMMARY_ROLE
+    lines += [
+        f"## {summary.section_title} ({summary.name})",
+        "",
+        outputs.get(summary.task_name) or MISSING_SECTION,
+        "",
+        "## How we got here",
+        "",
+    ]
+    for role in REPORT_ORDER:
+        if role.is_summary:
+            continue
+        lines += [
+            f"### {role.section_title} ({role.name})",
+            "",
+            outputs.get(role.task_name) or MISSING_SECTION,
+            "",
+        ]
+    return "\n".join(lines)
 
 
 def emit(report: str, stream: TextIO | None = None) -> None:

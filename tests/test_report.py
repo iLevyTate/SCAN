@@ -10,7 +10,7 @@ import pytest
 
 from scan import report
 from scan.report import MISSING_SECTION, REPORT_SECTIONS
-from scan.roles import BY_TASK_NAME, ROLES
+from scan.roles import BY_TASK_NAME, ROLES, SUMMARY_ROLE
 
 ALL_SECTIONS = {name: f"Body of {name}" for _, name in REPORT_SECTIONS}
 
@@ -18,11 +18,32 @@ ALL_SECTIONS = {name: f"Body of {name}" for _, name in REPORT_SECTIONS}
 def test_build_renders_every_section_in_report_order():
     result = report.build("Some topic", ALL_SECTIONS)
 
-    assert result.startswith("## SCAN AI Final Report on: Some topic\n\n")
-    positions = [result.index(f"### {title}") for title, _ in REPORT_SECTIONS]
+    assert result.startswith("# SCAN report: Some topic\n")
+    positions = [result.index(title) for title, _ in REPORT_SECTIONS]
     assert positions == sorted(positions)
-    for title, task_name in REPORT_SECTIONS:
-        assert f"### {title}\n{ALL_SECTIONS[task_name]}" in result
+    for _, task_name in REPORT_SECTIONS:
+        assert ALL_SECTIONS[task_name] in result
+
+
+def test_the_integrating_region_leads_the_report():
+    # Regression: DLPFC synthesises the other four but was rendered as just another peer
+    # section, so a reader had to get through four analyses to reach the recommendation.
+    result = report.build("Some topic", ALL_SECTIONS)
+
+    assert f"## {SUMMARY_ROLE.section_title} ({SUMMARY_ROLE.name})" in result
+    assert result.index(ALL_SECTIONS[SUMMARY_ROLE.task_name]) < result.index("## How we got here")
+    for role in ROLES:
+        if not role.is_summary:
+            assert result.index("## How we got here") < result.index(ALL_SECTIONS[role.task_name])
+
+
+def test_supporting_sections_sit_below_the_summary():
+    result = report.build("Some topic", ALL_SECTIONS)
+
+    for role in ROLES:
+        heading = f"{role.section_title} ({role.name})"
+        expected = "## " if role.is_summary else "### "
+        assert f"{expected}{heading}" in result
 
 
 def test_build_flags_missing_sections(caplog):

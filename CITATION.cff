@@ -3,8 +3,11 @@ title: "SCAN: Synthetic Cognitive Augmentation Network"
 message: "If you use this software, please cite it using the metadata from this file."
 type: software
 authors:
+  # Matches the Zenodo record (10.5281/zenodo.14052885) and the paper's citation of it.
   - alias: iLevyTate
     website: "https://github.com/iLevyTate"
+  - family-names: Sanders
+    given-names: Paul
 abstract: >-
   A multi-agent system that models prefrontal cortex function to support
   problem-solving, planning and decision-making. Five agents, each standing for

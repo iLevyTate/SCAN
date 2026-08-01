@@ -1,117 +1,77 @@
 from __future__ import annotations
 
 from functools import cached_property
-from textwrap import dedent
-from typing import TYPE_CHECKING, Literal, TypeAlias, cast
+from typing import TYPE_CHECKING
 
 from crewai import Agent
 
-from scan.config import settings
-from scan.openai_llm import OpenAIWrapper
-from scan.project_logger import logger
+from scan.config import settings as default_settings
+from scan.llm import build_llm
+from scan.project_logger import get_logger
+from scan.roles import ROLES, PFCRole, RoleName, get_role
 from scan.tools.search_tools import SearchTools
 
 if TYPE_CHECKING:
     from langchain.tools import Tool
 
-RoleName: TypeAlias = Literal["DLPFC", "VMPFC", "OFC", "ACC", "MPFC"]
+    from scan.config import Settings
+
+logger = get_logger(__name__)
+
+__all__ = ["PFCAgents", "RoleName"]
 
 
 class PFCAgents:
-    """Defines the PFC agents with their respective roles and responsibilities."""
+    """Builds one crewai agent per prefrontal-cortex role defined in :mod:`scan.roles`."""
 
-    def __init__(self, topic: str) -> None:
+    def __init__(self, topic: str, settings: Settings | None = None) -> None:
         self.topic = topic
-        self.agent_models = {
-            "DLPFC": settings.DLPFC_MODEL,
-            "VMPFC": settings.VMPFC_MODEL,
-            "OFC": settings.OFC_MODEL,
-            "ACC": settings.ACC_MODEL,
-            "MPFC": settings.MPFC_MODEL,
-        }
+        self.settings = settings if settings is not None else default_settings
         self.tools = self._build_tools()
+
+    @property
+    def agent_models(self) -> dict[RoleName, str]:
+        """Role -> configured model, resolved from settings on each access.
+
+        Deliberately not cached at import: callers override settings (``--model``, ``.env``,
+        tests) after this module is imported.
+        """
+        return {role.name: getattr(self.settings, role.model_setting) for role in ROLES}
 
     def _build_tools(self) -> list[Tool]:
         """Build the shared tool list for agents (search enabled when configured)."""
-        if not settings.SERPER_API_KEY:
-            logger.info("SERPER_API_KEY not set; agents will run without the search tool.")
+        if not self.settings.SERPAPI_API_KEY:
+            logger.info("SERPAPI_API_KEY not set; agents will run without the search tool.")
             return []
-        return [SearchTools().get_search_tool()]
+        return [SearchTools(settings=self.settings).get_search_tool()]
 
     @cached_property
-    def agents(self) -> dict[str, Agent]:
-        """Get the agents."""
-        agent_dict = {}
-        for role_name in self.agent_models.keys():
-            agent = self.create_agent(cast(RoleName, role_name))
-            agent_dict[role_name] = agent
-            logger.info(f"{role_name} agent initialized with model: {self.agent_models[role_name]}")
+    def agents(self) -> dict[RoleName, Agent]:
+        """The agents, built once.
 
+        Cached so the objects handed to ``Crew(agents=...)`` are the same objects the tasks
+        hold; crewai matches tasks to agents by identity.
+        """
+        agent_dict: dict[RoleName, Agent] = {}
+        for role in ROLES:
+            agent_dict[role.name] = self.create_agent(role.name)
+            logger.info(f"{role.name} agent initialized with model: {self.agent_models[role.name]}")
         return agent_dict
 
-    def create_agent(self, role_name: RoleName) -> Agent:
+    def create_agent(self, role_name: RoleName | str) -> Agent:
         """Creates an agent with the specified role."""
-        model_name = self.agent_models[role_name]
-        llm_wrapper = OpenAIWrapper(model_name=model_name)
-        llm = llm_wrapper.llm
-
-        backstory = dedent(f"""
-            You are the {role_name}, focusing on {self.get_backstory(role_name)} for the topic '{self.topic}'.
-            Please ensure you follow the task instructions precisely and provide concise responses.
-        """).strip()
-
-        goal = self.get_goal(role_name)
-
+        role: PFCRole = get_role(role_name)
         return Agent(
-            role=role_name,
-            backstory=backstory,
-            goal=goal,
-            llm=llm,
-            memory=True,
+            role=role.name,
+            backstory=role.backstory(self.topic),
+            goal=role.goal,
+            llm=build_llm(
+                model_name=getattr(self.settings, role.model_setting),
+                settings=self.settings,
+            ),
             verbose=False,
             tools=self.tools,
         )
-
-    def get_backstory(self, role_name: RoleName) -> str:
-        """Returns the backstory for the given role."""
-        if role_name == "DLPFC":
-            return "executive functions like planning and decision-making"
-        elif role_name == "VMPFC":
-            return "assessing emotional outcomes and risks"
-        elif role_name == "OFC":
-            return "balancing rewards against emotional risks"
-        elif role_name == "ACC":
-            return "resolving conflicts between emotional, reward-based, and logical inputs"
-        else:
-            return "understanding social dynamics and self-reflection"
-
-    def get_goal(self, role_name: RoleName) -> str:
-        """Returns the goal for the given role."""
-        if role_name == "DLPFC":
-            return dedent("""
-                Make decisions based on integrated logical, emotional, and social perspectives.
-                Ensure you synthesize information effectively and provide strategic recommendations.
-            """).strip()
-        elif role_name == "VMPFC":
-            return dedent("""
-                Provide emotional insights to aid in decision-making.
-                Assess emotional factors thoroughly and concisely.
-            """).strip()
-        elif role_name == "OFC":
-            return dedent("""
-                Assess actions based on rewards and manage impulses effectively.
-                Provide a concise evaluation of potential rewards and risks.
-            """).strip()
-        elif role_name == "ACC":
-            return dedent("""
-                Resolve conflicts in the decision-making process.
-                Analyze conflicts carefully and provide clear resolution strategies.
-            """).strip()
-        else:
-            return dedent("""
-                Analyze social interactions and provide insights for personal growth.
-                Focus on social cognition aspects relevant to the topic.
-            """).strip()
 
     def get_all_agents(self) -> list[Agent]:
         """Returns a list of all initialized agents."""

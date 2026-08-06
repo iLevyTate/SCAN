@@ -15,7 +15,8 @@ abstract: >-
   synthesis step integrates them into a single recommendation.
 repository-code: "https://github.com/iLevyTate/SCAN"
 license: MIT
-version: 0.1.0
+version: 1.0.0
+date-released: 2026-08-06
 doi: 10.5281/zenodo.14052884
 keywords:
   - multi-agent systems

@@ -23,6 +23,7 @@ Requires **Python 3.10–3.12** and an OpenAI API key.
 - [Tech stack](#tech-stack)
 - [Contributing](#contributing)
 - [Citation](#citation)
+- [Changelog](#changelog)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
 
@@ -193,7 +194,18 @@ discuss it. See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow,
 ## Citation
 
 If you use SCAN in published work, please cite it via the DOI badge above or the metadata in
-[CITATION.cff](CITATION.cff).
+[CITATION.cff](CITATION.cff). The badge resolves to the most recent release; each release also
+has its own version DOI if you need to cite a specific one.
+
+The SCAN paper cites `1.0.0-alpha`
+([10.5281/zenodo.14052885](https://doi.org/10.5281/zenodo.14052885)). Note that the five agents
+did not execute their own tasks in that version — see the
+[changelog](CHANGELOG.md#100---2026-08-06). Work reproducing the paper's architecture should use
+1.0.0 or later.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

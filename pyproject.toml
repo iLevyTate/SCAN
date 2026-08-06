@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scan"
-version = "0.1.0"
+version = "1.0.0"
 # 3.13 is blocked by the pinned stack, not by SCAN: crewai 0.76.9 resolves numpy 1.26.4, which
 # has no cp313 wheels.
 requires-python = ">=3.10,<3.13"

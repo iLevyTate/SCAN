@@ -1,0 +1,78 @@
+name: Release
+
+# Cuts a GitHub release from a tag, which is what Zenodo's integration listens for.
+# Run it from the Actions tab (or `gh workflow run release.yml -f tag=v1.2.3`) once the version
+# bump is merged to main.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to create and release, e.g. v1.0.0"
+        required: true
+        type: string
+      prerelease:
+        description: "Mark as a pre-release"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so the tag lands on a real commit, not a shallow stub.
+          fetch-depth: 0
+
+      - name: Check the tag does not already exist
+        run: |
+          if git rev-parse -q --verify "refs/tags/${{ inputs.tag }}" >/dev/null; then
+            echo "::error::Tag ${{ inputs.tag }} already exists."
+            exit 1
+          fi
+
+      - name: Verify the tag matches the version in the tree
+        # A release whose tag disagrees with pyproject.toml is worse than no release: the
+        # artifact and the citation metadata would say different things.
+        run: |
+          declared=$(python3 -c "import tomllib,pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          expected="${{ inputs.tag }}"
+          expected="${expected#v}"
+          if [ "$declared" != "$expected" ]; then
+            echo "::error::Tag ${{ inputs.tag }} does not match pyproject version $declared."
+            exit 1
+          fi
+          echo "Version $declared matches tag ${{ inputs.tag }}."
+
+      - name: Extract the changelog section for this version
+        id: notes
+        run: |
+          version="${{ inputs.tag }}"
+          version="${version#v}"
+          # The section runs from its own heading to the next version heading.
+          awk -v v="$version" '
+            $0 ~ "^## \\[" v "\\]" { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::error::No CHANGELOG.md section found for $version."
+            exit 1
+          fi
+          echo "Extracted $(wc -l < release-notes.md) lines of release notes."
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ inputs.tag }}" \
+            --title "${{ inputs.tag }}" \
+            --notes-file release-notes.md \
+            --target "${{ github.sha }}" \
+            ${{ inputs.prerelease && '--prerelease' || '' }}
+          echo "### Released [${{ inputs.tag }}](${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ inputs.tag }})" >> "$GITHUB_STEP_SUMMARY"

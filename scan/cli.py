@@ -19,7 +19,7 @@ from scan.console import console
 from scan.errors import ConfigurationError, MissingEnvironmentVariableError, ProviderError
 from scan.main import CustomCrew
 from scan.project_logger import configure_logging, get_logger
-from scan.roles import BY_NAME, BY_TASK_NAME, ROLES
+from scan.roles import BY_NAME, BY_TASK_NAME, ROLES, get_role
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -172,10 +172,14 @@ def describe_plan(topic: str, settings: Settings) -> None:
     console.print(f"Search tool: {'enabled' if settings.SERPAPI_API_KEY else 'disabled'}")
     crew = CustomCrew(topic=topic, settings=settings)
     for index, task in enumerate(crew.build_tasks(), start=1):
-        role = task.agent.role
+        agent = task.agent
+        if agent is None:
+            # Every SCAN task is built with its role's agent (see PFCTasks.build).
+            raise RuntimeError(f"Task {task.name!r} has no agent")
+        role = get_role(agent.role)
         console.print(
-            f"\n--- [{index}/{len(ROLES)}] {role} "
-            f"({getattr(settings, BY_NAME[role].model_setting)}) ---"
+            f"\n--- [{index}/{len(ROLES)}] {role.name} "
+            f"({getattr(settings, role.model_setting)}) ---"
         )
         console.print(task.description)
         console.print(f"Expected output: {task.expected_output}")

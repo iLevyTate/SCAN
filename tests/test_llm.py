@@ -1,5 +1,5 @@
 from crewai import Agent
-from crewai.llm import LLM
+from crewai.llms.base_llm import BaseLLM
 
 from scan.config import Settings, settings
 from scan.llm import build_llm
@@ -34,8 +34,8 @@ def test_crewai_uses_the_llm_object_verbatim():
     agent = Agent(role="R", goal="g", backstory="b", llm=llm)
 
     assert agent.llm is llm
-    assert agent.llm.api_key == "sk-explicit"
-    assert agent.llm.timeout == settings.REQUEST_TIMEOUT
+    assert llm.api_key == "sk-explicit"
+    assert llm.timeout == settings.REQUEST_TIMEOUT
 
 
 def test_each_agent_gets_its_own_llm():
@@ -54,4 +54,5 @@ def test_defaults_come_from_settings(monkeypatch):
 
 
 def test_build_llm_returns_a_crewai_llm():
-    assert isinstance(build_llm("gpt-4o"), LLM)
+    # crewai 1.x: `LLM(...)` returns a provider-specific BaseLLM subclass, not an LLM instance.
+    assert isinstance(build_llm("gpt-4o"), BaseLLM)

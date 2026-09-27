@@ -12,7 +12,7 @@ from scan.roles import ROLES, PFCRole, RoleName, get_role
 from scan.tools.search_tools import SearchTools
 
 if TYPE_CHECKING:
-    from langchain.tools import Tool
+    from crewai.tools import BaseTool
 
     from scan.config import Settings
 
@@ -38,7 +38,7 @@ class PFCAgents:
         """
         return {role.name: getattr(self.settings, role.model_setting) for role in ROLES}
 
-    def _build_tools(self) -> list[Tool]:
+    def _build_tools(self) -> list[BaseTool]:
         """Build the shared tool list for agents (search enabled when configured)."""
         if not self.settings.SERPAPI_API_KEY:
             logger.info("SERPAPI_API_KEY not set; agents will run without the search tool.")

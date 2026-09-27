@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from crewai import Crew, Process
+from crewai.crews.crew_output import CrewOutput
 
 from scan import report
 from scan.config import apply_environment
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
     from crewai import Task
-    from crewai.crews.crew_output import CrewOutput
+    from crewai.agents.agent_builder.base_agent import BaseAgent
     from crewai.tasks.task_output import TaskOutput
 
     from scan.config import Settings
@@ -79,8 +80,10 @@ class CustomCrew:
         with. Swallowing exceptions here meant a totally failed run still exited 0. Anything
         that finished before the failure is left in :attr:`completed`.
         """
+        # crewai types Crew.agents as list[BaseAgent]; a list[Agent] is not assignable to it.
+        agents: list[BaseAgent] = [*self.agents.get_all_agents()]
         crew = Crew(
-            agents=self.agents.get_all_agents(),
+            agents=agents,
             tasks=self.build_tasks(),
             task_callback=self._on_task_complete(on_task_complete),
             # Sequential, not hierarchical. Under Process.hierarchical crewai routes *every*
@@ -105,6 +108,10 @@ class CustomCrew:
                 raise
             raise translated from error
         logger.info("Crew execution completed.")
+        if not isinstance(crew_output, CrewOutput):
+            # kickoff() only yields a CrewStreamingOutput when the crew is built with
+            # stream=True, which SCAN never does.
+            raise TypeError(f"Unexpected crew output type: {type(crew_output).__name__}")
 
         # crewai declares token_usage as UsageMetrics but defaults it to a bare dict, so this
         # has to tolerate both. Reported from the crew because the langchain callback handler

@@ -6,8 +6,8 @@ build-backend = "hatchling.build"
 [project]
 name = "scan"
 version = "1.0.0"
-# 3.13 is blocked by the pinned stack, not by SCAN: crewai 0.76.9 resolves numpy 1.26.4, which
-# has no cp313 wheels.
+# 3.13 was blocked by the pinned stack, not by SCAN (crewai 0.76.9 resolved numpy 1.26.4, which
+# has no cp313 wheels); not re-evaluated after the crewai 1.x upgrade.
 requires-python = ">=3.10,<3.13"
 description = "A multi-agent system that models prefrontal-cortex function to help reason about a decision."
 readme = "README.md"
@@ -29,15 +29,15 @@ classifiers = [
 ]
 
 dependencies = [
-  "crewai==0.76.9",
+  "crewai==1.15.22",
   "google-search-results==2.4.2",
-  "langchain==0.3.7",
-  "langchain-community==0.3.4",
-  "langchain-openai==0.2.6",
-  "openai==1.54.3",
-  "pydantic==2.9.2",
-  "pydantic-settings==2.6.1",
-  "rich==13.9.4",
+  "langchain==1.4.2",
+  "langchain-community==0.4.2",
+  "langchain-openai==1.6.6",
+  "openai==2.54.0",
+  "pydantic==2.12.5",
+  "pydantic-settings==2.15.0",
+  "rich==14.3.4",
 ]
 
 # Keep [project.urls] and every other sub-table below all bare [project] keys: a key placed
@@ -52,8 +52,8 @@ Zenodo = "https://doi.org/10.5281/zenodo.14052884"
 dev = [
   "mypy[faster-cache]==1.13.0",
   "pre-commit==4.0.1",
-  "pytest==8.3.3",
-  "pytest-cov==6.0.0",
+  "pytest==9.1.1",
+  "pytest-cov==7.1.0",
   "ruff==0.7.3",
 ]
 

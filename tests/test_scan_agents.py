@@ -1,10 +1,18 @@
 import pytest
+from crewai import Agent
+from crewai.llms.base_llm import BaseLLM
 
 from scan.config import settings
 from scan.roles import ROLES
 from scan.scan_agents import PFCAgents
 
 ROLE_NAMES = [role.name for role in ROLES]
+
+
+def _llm(agent: Agent) -> BaseLLM:
+    """Narrow ``Agent.llm`` (typed ``str | BaseLLM | None``) to the object SCAN builds."""
+    assert isinstance(agent.llm, BaseLLM)
+    return agent.llm
 
 
 @pytest.fixture
@@ -54,7 +62,7 @@ def test_agents_use_configured_models(monkeypatch):
     agents = PFCAgents(topic="Some topic")
 
     assert agents.agent_models == distinct
-    assert {name: agent.llm.model for name, agent in agents.agents.items()} == distinct
+    assert {name: _llm(agent).model for name, agent in agents.agents.items()} == distinct
 
 
 def test_agent_models_resolve_lazily(pfc_agents, monkeypatch):
@@ -68,7 +76,7 @@ def test_agent_models_resolve_lazily(pfc_agents, monkeypatch):
 def test_max_tokens_reaches_the_agent(monkeypatch):
     monkeypatch.setattr(settings, "MAX_TOKENS", 321)
 
-    assert PFCAgents(topic="Some topic").agents["DLPFC"].llm.max_tokens == 321
+    assert _llm(PFCAgents(topic="Some topic").agents["DLPFC"]).max_tokens == 321
 
 
 def test_agents_have_search_tool_when_serpapi_set(pfc_agents):
@@ -84,10 +92,11 @@ def test_agents_have_no_tools_without_serpapi(monkeypatch):
     assert agents.create_agent("DLPFC").tools == []
 
 
-def test_agents_do_not_receive_an_unsupported_memory_kwarg(pfc_agents):
-    # Regression: create_agent passed `memory=True` to crewai's Agent, which has no such
-    # field. Pydantic silently dropped it, so the setting never did anything.
-    assert not hasattr(pfc_agents.create_agent("DLPFC"), "memory")
+def test_agents_do_not_opt_into_agent_memory(pfc_agents):
+    # Regression: create_agent once passed `memory=True` to crewai's Agent, which (in 0.x) had
+    # no such field, so pydantic silently dropped it. crewai 1.x does have `Agent.memory`;
+    # SCAN still leaves it unset so memory stays a crew-level decision.
+    assert pfc_agents.create_agent("DLPFC").memory is None
 
 
 def test_explicit_settings_override_the_singleton():
@@ -96,4 +105,4 @@ def test_explicit_settings_override_the_singleton():
     agents = PFCAgents(topic="Some topic", settings=overridden)
 
     assert agents.agent_models["DLPFC"] == "gpt-4o-injected"
-    assert agents.agents["DLPFC"].llm.model == "gpt-4o-injected"
+    assert _llm(agents.agents["DLPFC"]).model == "gpt-4o-injected"

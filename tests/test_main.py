@@ -1,6 +1,7 @@
 import pytest
 from crewai import Process
-from crewai.crews.crew_output import CrewOutput, TaskOutput
+from crewai.crews.crew_output import CrewOutput
+from crewai.tasks.task_output import TaskOutput
 
 from scan import main as main_module
 from scan import report
@@ -61,7 +62,9 @@ def test_report_headings_name_the_agent_that_produced_them():
     tasks = {task.name: task for task in CustomCrew("Some topic").build_tasks()}
 
     for title, task_name in REPORT_SECTIONS:
-        assert title.endswith(f"({tasks[task_name].agent.role})")
+        agent = tasks[task_name].agent
+        assert agent is not None
+        assert title.endswith(f"({agent.role})")
         assert title.startswith(BY_TASK_NAME[task_name].section_title)
 
 
@@ -74,6 +77,7 @@ def test_build_tasks_wires_context_and_orders_dependencies():
 
     assert order == [role.task_name for role in execution_order()]
     for task in tasks:
+        assert isinstance(task.context, list)
         for dependency in task.context:
             assert order.index(dependency.name) < order.index(task.name)
 

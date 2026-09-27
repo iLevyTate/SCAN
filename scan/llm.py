@@ -32,6 +32,10 @@ def build_llm(model_name: str, settings: Settings | None = None) -> LLM:
 
     A fresh instance per agent on purpose: crewai's executor mutates ``llm.stop`` in place, so
     a shared object would accumulate another agent's stop words.
+
+    Since crewai 1.x, ``LLM(...)`` is a factory: at runtime it returns a provider-specific
+    ``BaseLLM`` subclass (``OpenAICompletion`` for OpenAI models), so callers should test for
+    ``BaseLLM`` rather than ``LLM``. The annotation follows crewai's own signature.
     """
     config = settings if settings is not None else default_settings
     llm = LLM(

@@ -51,10 +51,10 @@ Zenodo = "https://doi.org/10.5281/zenodo.14052884"
 [dependency-groups]
 dev = [
   "mypy[faster-cache]==1.13.0",
-  "pre-commit==4.0.1",
+  "pre-commit==4.6.2",
   "pytest==9.1.1",
   "pytest-cov==7.1.0",
-  "ruff==0.7.3",
+  "ruff==0.16.9",
 ]
 
 [project.scripts]

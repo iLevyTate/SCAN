@@ -19,6 +19,11 @@ on:
 permissions:
   contents: write
 
+# The tag reaches the shell through the environment, never through ${{ }} interpolation, so a
+# value like `v1; curl ... | sh` stays a string instead of becoming part of the script.
+env:
+  TAG: ${{ inputs.tag }}
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -31,8 +36,8 @@ jobs:
 
       - name: Check the tag does not already exist
         run: |
-          if git rev-parse -q --verify "refs/tags/${{ inputs.tag }}" >/dev/null; then
-            echo "::error::Tag ${{ inputs.tag }} already exists."
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "::error::Tag $TAG already exists."
             exit 1
           fi
 
@@ -41,18 +46,18 @@ jobs:
         # artifact and the citation metadata would say different things.
         run: |
           declared=$(python3 -c "import tomllib,pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
-          expected="${{ inputs.tag }}"
+          expected="$TAG"
           expected="${expected#v}"
           if [ "$declared" != "$expected" ]; then
-            echo "::error::Tag ${{ inputs.tag }} does not match pyproject version $declared."
+            echo "::error::Tag $TAG does not match pyproject version $declared."
             exit 1
           fi
-          echo "Version $declared matches tag ${{ inputs.tag }}."
+          echo "Version $declared matches tag $TAG."
 
       - name: Extract the changelog section for this version
         id: notes
         run: |
-          version="${{ inputs.tag }}"
+          version="$TAG"
           version="${version#v}"
           # The section runs from its own heading to the next version heading.
           awk -v v="$version" '
@@ -70,9 +75,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ inputs.tag }}" \
-            --title "${{ inputs.tag }}" \
+          gh release create "$TAG" \
+            --title "$TAG" \
             --notes-file release-notes.md \
             --target "${{ github.sha }}" \
             ${{ inputs.prerelease && '--prerelease' || '' }}
-          echo "### Released [${{ inputs.tag }}](${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ inputs.tag }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Released [$TAG](${{ github.server_url }}/${{ github.repository }}/releases/tag/$TAG)" >> "$GITHUB_STEP_SUMMARY"

@@ -1,6 +1,6 @@
 [build-system]
 # >=1.27 is required for the bare SPDX `license` string below (PEP 639).
-requires = ["hatchling>=1.27"]
+requires = ["hatchling>=1.32.4"]
 build-backend = "hatchling.build"
 
 [project]
@@ -29,11 +29,11 @@ classifiers = [
 ]
 
 dependencies = [
-  "crewai==1.15.22",
+  "crewai==1.15.28",
   "google-search-results==2.4.2",
-  "langchain==1.4.2",
+  "langchain==1.4.5",
   "langchain-community==0.4.2",
-  "langchain-openai==1.6.6",
+  "langchain-openai==1.7.2",
   "openai==2.54.0",
   "pydantic==2.12.5",
   "pydantic-settings==2.15.0",
@@ -50,7 +50,7 @@ Zenodo = "https://doi.org/10.5281/zenodo.14052884"
 
 [dependency-groups]
 dev = [
-  "mypy[faster-cache]==1.13.0",
+  "mypy[faster-cache]==2.4.0",
   "pre-commit==4.6.2",
   "pytest==9.1.1",
   "pytest-cov==7.1.0",

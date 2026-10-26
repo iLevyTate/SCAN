@@ -9,12 +9,22 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    # CrewAI 1.15.30 requires openai<3 and pydantic<2.13; its instructor
+    # dependency requires rich<15. Revisit these bounds with CrewAI upgrades.
+    # Compatible patch/security updates remain eligible.
+    ignore:
+      - dependency-name: "openai"
+        versions: [">=3.0.0"]
+      - dependency-name: "pydantic"
+        versions: [">=2.13.0"]
+      - dependency-name: "rich"
+        versions: [">=15.0.0"]
     groups:
       dev-dependencies:
-        patterns: ["mypy", "pre-commit", "pytest", "pytest-cov", "ruff"]
+        patterns: ["mypy*", "pre-commit", "pytest", "pytest-cov", "ruff"]
       runtime-dependencies:
         patterns: ["*"]
-        exclude-patterns: ["mypy", "pre-commit", "pytest", "pytest-cov", "ruff"]
+        exclude-patterns: ["mypy*", "pre-commit", "pytest", "pytest-cov", "ruff"]
 
   # The actions below were never being updated at all, and unlike the Python pins they carry
   # no lockfile, so this is where drift actually accumulates.

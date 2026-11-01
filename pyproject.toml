@@ -52,9 +52,9 @@ Zenodo = "https://doi.org/10.5281/zenodo.14052884"
 dev = [
   "mypy[faster-cache]==2.4.0",
   "pre-commit==4.6.2",
-  "pytest==9.1.1",
+  "pytest==9.2.0",
   "pytest-cov==7.1.0",
-  "ruff==0.17.2",
+  "ruff==0.17.3",
 ]
 
 [project.scripts]

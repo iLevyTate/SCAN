@@ -52,4 +52,4 @@ jobs:
             echo "Required Actions checks are not enforced for this branch. Leaving the PR for review."
             exit 0
           fi
-          gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --auto --squash --match-head-commit "$EXPECTED_HEAD"
+          gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --auto --merge --match-head-commit "$EXPECTED_HEAD"

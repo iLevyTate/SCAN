@@ -90,7 +90,7 @@ exclude_also = [
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py311"
 # Deliberately no `fix = true`: it made `ruff check` auto-repair the working tree and exit 0,
 # so the CI lint gate could never fail. Fixing is opt-in via `ruff check --fix` (see the
 # pre-commit hook), while plain `ruff check` stays a real check.

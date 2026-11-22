@@ -9,7 +9,7 @@ cortex function to help you think through a decision. Five agents, each standing
 PFC region, analyse your topic from a different angle; a sixth step integrates them into a single
 recommendation.
 
-Requires **Python 3.10–3.12** and an OpenAI API key.
+Requires **Python 3.11–3.12** and an OpenAI API key.
 
 ## Table of Contents
 
@@ -217,3 +217,5 @@ MIT — see [LICENSE](LICENSE).
 - **LangChain**, for the tool integrations
 - **OpenAI**, for the language models
 - Everyone who has contributed to SCAN
+
+Python 3.10 is no longer supported: patched Pillow 13 and filelock 4.2.1+ require Python 3.11. Install a supported interpreter before upgrading. ChromaDB remains a transitive CrewAI dependency with unpatched server advisories; SCAN does not run a Chroma server and keeps Crew memory disabled. Do not expose a Chroma HTTP server from this environment.

@@ -8,7 +8,7 @@ name = "scan"
 version = "1.0.0"
 # 3.13 was blocked by the pinned stack, not by SCAN (crewai 0.76.9 resolved numpy 1.26.4, which
 # has no cp313 wheels); not re-evaluated after the crewai 1.x upgrade.
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.11,<3.13"
 description = "A multi-agent system that models prefrontal-cortex function to help reason about a decision."
 readme = "README.md"
 authors = [ { name = "iLevyTate" } ]
@@ -21,7 +21,6 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
@@ -63,8 +62,8 @@ run-scan = "scan.cli:main"
 [tool.mypy]
 strict = true
 warn_unreachable = true
-# Pin the target version: CI lints on 3.10 (the floor), but a developer's venv may be newer.
-python_version = "3.10"
+# Pin the target version: CI lints on 3.11 (the floor), but a developer's venv may be newer.
+python_version = "3.11"
 
 [[tool.mypy.overrides]]
 module = ["tests.*"]

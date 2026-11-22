@@ -5,15 +5,25 @@ in pyproject was never executed by a test, so a broken entry point would have sh
 These run the real thing in a subprocess.
 """
 
+import os
 import pathlib
 import re
 import subprocess
 import sys
+import tomllib
 
 from scan import __version__
 
 
 def _run(args, **kwargs):
+    if os.name == "nt" and "env" in kwargs:
+        # Preserve only OS loader requirements, never ambient application/API keys.
+        windows_env = {
+            key: os.environ[key]
+            for key in ("SystemRoot", "SYSTEMROOT", "WINDIR", "COMSPEC", "TEMP", "TMP")
+            if key in os.environ
+        }
+        kwargs["env"] = {**windows_env, **kwargs["env"]}
     return subprocess.run(args, capture_output=True, text=True, timeout=120, check=False, **kwargs)
 
 
@@ -58,12 +68,8 @@ def test_dry_run_writes_nothing_to_stdout(monkeypatch):
 
 
 def _pyproject():
-    if sys.version_info >= (3, 11):
-        import tomllib
-    else:
-        import tomli as tomllib  # pragma: no cover
     return tomllib.loads(
-        pathlib.Path(__file__).parent.parent.joinpath("pyproject.toml").read_text()
+        pathlib.Path(__file__).parent.parent.joinpath("pyproject.toml").read_text(encoding="utf-8")
     )
 
 

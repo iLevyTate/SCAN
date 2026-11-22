@@ -20,7 +20,19 @@ def _run(args, **kwargs):
         # Preserve only OS loader requirements, never ambient application/API keys.
         windows_env = {
             key: os.environ[key]
-            for key in ("SystemRoot", "SYSTEMROOT", "WINDIR", "COMSPEC", "TEMP", "TMP")
+            for key in (
+                "SystemRoot",
+                "SYSTEMROOT",
+                "WINDIR",
+                "COMSPEC",
+                "TEMP",
+                "TMP",
+                "USERPROFILE",
+                "HOMEDRIVE",
+                "HOMEPATH",
+                "APPDATA",
+                "LOCALAPPDATA",
+            )
             if key in os.environ
         }
         kwargs["env"] = {**windows_env, **kwargs["env"]}

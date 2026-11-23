@@ -24,12 +24,17 @@ jobs:
     name: Package SCAN site
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      home_sha256: ${{ steps.digest.outputs.home }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Verify the homepage
-        run: test -s docs/pages/index.html
+      - name: Verify and hash the homepage
+        id: digest
+        run: |
+          test -s docs/pages/index.html
+          echo "home=$(sha256sum docs/pages/index.html | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: docs/pages
@@ -50,3 +55,30 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+
+  verify:
+    name: Verify the live site
+    needs: [package, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Confirm Pages serves the packaged HTML
+        env:
+          SITE_URL: https://ilevytate.github.io/SCAN/
+          HOME_SHA256: ${{ needs.package.outputs.home_sha256 }}
+        run: |
+          set -euo pipefail
+          verify_page() {
+            local url="$1" expected="$2" live="$RUNNER_TEMP/published.html"
+            for attempt in {1..6}; do
+              if curl --fail --silent --show-error --max-time 12 --output "$live" "$url" \
+                && printf '%s  %s\n' "$expected" "$live" | sha256sum --check --status; then
+                return 0
+              fi
+              if [ "$attempt" -lt 6 ]; then sleep 10; fi
+            done
+            echo "::error::Pages did not serve the packaged HTML at $url."
+            return 1
+          }
+          verify_page "$SITE_URL" "$HOME_SHA256"

@@ -9,7 +9,7 @@ cortex function to help you think through a decision. Five agents, each standing
 PFC region, analyse your topic from a different angle; a sixth step integrates them into a single
 recommendation.
 
-Requires **Python 3.11–3.12** and an OpenAI API key.
+Requires **Python 3.11–3.13** and an OpenAI API key.
 
 ## Table of Contents
 

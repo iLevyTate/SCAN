@@ -33,6 +33,6 @@ No advisory is suppressed in the audit configuration.
 
 - `uv lock --check` and `uv sync --locked`
 - Ruff lint/format, mypy, and the existing pytest coverage gate
-- CI tests Python 3.10, 3.11, and 3.12
+- CI tests Python 3.11, 3.12, and 3.13.
 - Export the locked production requirements and run `pip-audit` to reassess
   advisories; retain the Python marker-specific versions in the export.

@@ -6,9 +6,8 @@ build-backend = "hatchling.build"
 [project]
 name = "scan"
 version = "1.0.0"
-# 3.13 was blocked by the pinned stack, not by SCAN (crewai 0.76.9 resolved numpy 1.26.4, which
-# has no cp313 wheels); not re-evaluated after the crewai 1.x upgrade.
-requires-python = ">=3.11,<3.13"
+# The pinned CrewAI release supports Python 3.13 and excludes Python 3.14 and later.
+requires-python = ">=3.11,<3.14"
 description = "A multi-agent system that models prefrontal-cortex function to help reason about a decision."
 readme = "README.md"
 authors = [ { name = "iLevyTate" } ]
@@ -23,6 +22,7 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
   "Typing :: Typed",
 ]
